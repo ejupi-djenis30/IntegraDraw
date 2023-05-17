@@ -2,11 +2,13 @@ package com.planck.data;
 
 public class ProgramData {
     private int rects;
+    private String formula;
 
     private static ProgramData currentInstance;
 
     private ProgramData() {
         rects = 0;
+        formula = "";
     }
 
     public static synchronized ProgramData getInstance() {
@@ -22,5 +24,13 @@ public class ProgramData {
 
     public void setRects(int rects) {
         this.rects = rects;
+    }
+
+    public String getFormula() {
+        return formula;
+    }
+
+    public void setFormula(String formula) {
+        this.formula = formula;
     }
 }
