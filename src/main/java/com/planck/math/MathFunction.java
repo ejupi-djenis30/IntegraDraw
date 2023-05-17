@@ -6,6 +6,8 @@ import java.util.ArrayList;
 
 public class MathFunction {
     private IExpr function;
+    private IExpr integral;
+    private IExpr derivate;
     private String variable;
 
     public MathFunction(String function, String variable) {
@@ -27,7 +29,7 @@ public class MathFunction {
         double mediumWidth = (higherInterval - lowerInterval) / numberOfRectangles;
             for(double i = lowerInterval; i < higherInterval; i += mediumWidth) {
                 double y = DefaultMathParser.getInstance().calculateFunction(function,i, variable);
-                rectangles.add(new Rectangle(i, y,mediumWidth));
+                rectangles.add(new Rectangle(i, Math.abs(y),mediumWidth));
             }
 
         return rectangles;
@@ -47,15 +49,6 @@ public class MathFunction {
 
     public void changeVariable(String variable) {
         this.variable = variable;
-    }
-
-    public IExpr getIntegral() {
-        return DefaultMathParser.getInstance().integralFunction(this.function, variable);
-
-    }
-
-    public IExpr getDerivate() {
-        return DefaultMathParser.getInstance().derivateFunction(this.function, variable);
     }
 
 

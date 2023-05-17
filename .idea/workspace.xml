@@ -4,9 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a486d4da-e519-438b-88c6-029d023b2b73" name="Changes" comment="">
+    <list default="true" id="a486d4da-e519-438b-88c6-029d023b2b73" name="Changes" comment="miglioramento">
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/planck/data/GraphData.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/data/ProgramData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/data/ProgramData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/math/DefaultMathParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/math/DefaultMathParser.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/math/MathFunction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/math/MathFunction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/ui/MainPanel.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/ui/MainPanel.form" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/ui/MainPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/ui/MainPanel.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/ui/widgets/GraphView.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/ui/widgets/GraphView.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -50,9 +56,19 @@
       <option name="presentableId" value="Default" />
       <updated>1684254057626</updated>
     </task>
+    <task id="LOCAL-00001" summary="miglioramento">
+      <created>1684329772732</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1684329772732</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+    <MESSAGE value="miglioramento" />
+    <option name="LAST_COMMIT_MESSAGE" value="miglioramento" />
   </component>
 </project>

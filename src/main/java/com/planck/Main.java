@@ -12,8 +12,7 @@ public class Main {
         JFrame mainWindow = new JFrame();
         mainWindow.setContentPane(new MainPanel().mainPanel);
         mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        mainWindow.setMinimumSize(new Dimension(600, 600));
-        mainWindow.setResizable(false);
+        mainWindow.setMinimumSize(new Dimension(800, 800));
         mainWindow.setTitle("IntegralDraw");
         mainWindow.setVisible(true);
 
