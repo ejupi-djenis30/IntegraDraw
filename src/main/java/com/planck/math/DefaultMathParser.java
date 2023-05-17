@@ -8,7 +8,7 @@ public class DefaultMathParser {
     private ExprEvaluator util;
     private static DefaultMathParser instance;
     private DefaultMathParser() {
-        util = new ExprEvaluator(false, (short) 1);
+        util = new ExprEvaluator();
     }
 
     public static DefaultMathParser getInstance() {
@@ -23,21 +23,26 @@ public class DefaultMathParser {
     }
 
 
-    public IExpr integralFunction(IExpr function, String variable) {
-        return util.eval("integrate(" + function.toString() + "," + variable + ")");
+    public IExpr integralFunction(String function, String variable) {
+        util.clearVariables();
+        return util.eval("integrate(" + function + "," + variable + ")");
     }
 
-    public IExpr derivateFunction(IExpr function, String variable) {
-        return util.eval("D(" + function.toString() + "," + variable + ")");
+    public IExpr derivateFunction(String function, String variable) {
+        util.clearVariables();
+        return util.eval("D(" + function + "," + variable + ")");
     }
 
     public double calculateNumericalIntegral(IExpr function,double higherInterval, double lowerInterval, String forVariable) {
+        util.clearVariables();
         return util.eval("NIntegrate(" + function.toString() + ", {"+ forVariable +", "+ lowerInterval +", "+ higherInterval+"})").evalDouble();
     }
 
     public double calculateFunction(IExpr function, double variableValue, String variable){
         util.defineVariable(variable, variableValue);
-        return util.eval(function).evalDouble();
+        double value = util.eval(function).evalDouble();
+        util.clearVariables();
+        return value;
     }
 
 

@@ -3,12 +3,16 @@ package com.planck.data;
 public class ProgramData {
     private int rects;
     private String formula;
+    private int lowLimit;
+    private int highLimit;
 
     private static ProgramData currentInstance;
 
     private ProgramData() {
         rects = 0;
         formula = "";
+        lowLimit = 0;
+        highLimit = 0;
     }
 
     public static synchronized ProgramData getInstance() {
@@ -32,5 +36,21 @@ public class ProgramData {
 
     public void setFormula(String formula) {
         this.formula = formula;
+    }
+
+    public int getLowLimit() {
+        return lowLimit;
+    }
+
+    public void setLowLimit(int lowLimit) {
+        this.lowLimit = lowLimit;
+    }
+
+    public int getHighLimit() {
+        return highLimit;
+    }
+
+    public void setHighLimit(int highLimit) {
+        this.highLimit = highLimit;
     }
 }
