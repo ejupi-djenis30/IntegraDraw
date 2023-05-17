@@ -2,6 +2,7 @@ package com.planck.ui.widgets;
 
 import com.planck.data.GraphData;
 import com.planck.data.ProgramData;
+import com.planck.math.DefaultMathParser;
 import com.planck.math.MathFunction;
 import com.planck.math.Rectangle;
 
@@ -66,10 +67,14 @@ public class GraphView extends JPanel {
         if(programData.getLowLimit() < programData.getHighLimit() && programData.getRects() > 0) {
             g.setColor(Color.RED);
             ArrayList<Rectangle> rectangles = function.getRectangles(programData.getLowLimit(), programData.getHighLimit(), programData.getRects());
+            double areaTotale = 0;
             for(Rectangle rectangle: rectangles) {
-                int y = values.get((int) rectangle.getX()).intValue();
-                g.drawRect((int) rectangle.getX() + limitW, y > 0 ? (limitH) : (int) (limitH - rectangle.getHeight()), (int) rectangle.getWidth(), (int) rectangle.getHeight());
+                int y = values.get((int) (limitW + rectangle.getX())).intValue();
+                g.drawRect((int) rectangle.getX() + limitW, y < 0 ? (limitH) : (int) (limitH - rectangle.getHeight()), (int) rectangle.getWidth(), (int) rectangle.getHeight());
+                areaTotale += y > 0 ? rectangle.getArea() : -rectangle.getArea();
             }
+            GraphData.getInstance().setIntegralArea(DefaultMathParser.getInstance().calculateNumericalIntegral(function.getFunction(),programData.getLowLimit(),programData.getHighLimit(),"x"));
+            GraphData.getInstance().setRectanglesArea(areaTotale);
         }
 
 
