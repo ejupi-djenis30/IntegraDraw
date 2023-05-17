@@ -1,11 +1,9 @@
 package com.planck.ui;
 
+import com.planck.data.ProgramData;
 import com.planck.ui.widgets.GraphView;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import java.beans.PropertyChangeListener;
 
 public class MainPanel {
     public JPanel mainPanel;
@@ -17,7 +15,10 @@ public class MainPanel {
 
     public MainPanel() {
         rectSlider.addChangeListener(e -> {
-            rectNumLbl.setText(String.valueOf(rectSlider.getValue()));
+            ProgramData programData = ProgramData.getInstance();
+            programData.setRects(rectSlider.getValue());
+
+            rectNumLbl.setText(String.valueOf(programData.getRects()));
         });
     }
 
