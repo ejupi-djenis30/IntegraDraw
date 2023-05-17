@@ -32,7 +32,6 @@ public class MainPanel {
     public MainPanel() {
 
         lowSpin.addChangeListener( e -> {
-            System.out.println("Ciaoo");
             int lowVal = Integer.parseInt(String.valueOf(lowSpin.getValue()));
             ProgramData programData = ProgramData.getInstance();
             programData.setLowLimit(lowVal);
