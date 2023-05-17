@@ -33,6 +33,10 @@ public class MathFunction {
         return rectangles;
     }
 
+    public double getValueAt(double value) {
+        return DefaultMathParser.getInstance().calculateFunction(function,value,variable);
+    }
+
     public IExpr getFunction() {
         return function;
     }

@@ -1,11 +1,11 @@
 package com.planck.ui.widgets;
 
 import com.planck.data.ProgramData;
-import net.objecthunter.exp4j.Expression;
-import net.objecthunter.exp4j.ExpressionBuilder;
+import com.planck.math.MathFunction;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 
 public class GraphView extends JPanel {
     private static final int LIMIT = 250;
@@ -46,12 +46,27 @@ public class GraphView extends JPanel {
     }
 
     private void drawFormula(Graphics g) {
-        g.setColor(Color.BLUE);
 
         String formula = ProgramData.getInstance().getFormula();
         if (formula.isEmpty())
             return;
 
+        MathFunction function = new MathFunction(formula, "x");
+        System.out.println(function.getValueAt(3));
+        ArrayList<Double> values = function.getValuesGivenInterval(-LIMIT,LIMIT,1);
+        for (int i = -LIMIT; i < LIMIT; i++) {
+            int currentSegment = (values.get((i + LIMIT)).intValue() + LIMIT);
+            int nextSegment = (values.get((i + LIMIT + 1) >= LIMIT ? (i + LIMIT) : (i + LIMIT + 1)).intValue() + LIMIT);
+            System.out.println(i + " " + currentSegment + " " + nextSegment);
+            if(i < 0) {
+                g.setColor(Color.BLUE);
+                g.drawLine(i + LIMIT, currentSegment, i - 1 + LIMIT, nextSegment);
+            } else {
+                g.setColor(Color.RED);
+                g.drawLine(i + LIMIT, currentSegment, i + 1 + LIMIT, nextSegment);
+            }
+        }
+        /*
         for (int i = 0; i <= LIMIT; i++) {
             int[] segment = getFormulaSegment(i, formula, 1);
             segment[0] += LIMIT;
@@ -69,7 +84,7 @@ public class GraphView extends JPanel {
             g.drawLine(i + LIMIT, segment[0], i - 1 + LIMIT, segment[1]);
         }
 
-        /*
+
         for (int i = 250; i >= 0; i--) {
             g.setColor(Color.RED);
             drawFormulaSegment(i, formula, g, -1);
@@ -96,6 +111,7 @@ public class GraphView extends JPanel {
         }*/
     }
 
+    /*
     private int[] getFormulaSegment(int i, String formula, int inc) {
         Expression expression = new ExpressionBuilder(formula)
                 .variables("x").build()
@@ -110,4 +126,5 @@ public class GraphView extends JPanel {
 
         return new int[]{result, result_after};
     }
+    */
 }
