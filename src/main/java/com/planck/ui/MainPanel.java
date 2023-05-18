@@ -6,12 +6,7 @@ import com.planck.math.DefaultMathParser;
 import com.planck.ui.widgets.GraphView;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 
 public class MainPanel {
     public JPanel mainPanel;
@@ -27,6 +22,7 @@ public class MainPanel {
     private JLabel aRet;
     private JLabel aTrap;
     private JLabel aInt;
+    private JButton drawBtn;
 
 
     public MainPanel() {
@@ -69,13 +65,7 @@ public class MainPanel {
         formulaTxtField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
-                ProgramData programData = ProgramData.getInstance();
-                programData.setFormula(formulaTxtField.getText());
-                DefaultMathParser mathParser = DefaultMathParser.getInstance();
-                integralLabl.setText(mathParser.integralFunction(formulaTxtField.getText(), "x").toString());
-                derivateLabl.setText(mathParser.derivateFunction(formulaTxtField.getText(),"x").toString());
 
-                graphView.repaint();
             }
         });
         scrollPane.addComponentListener(new ComponentAdapter() {
@@ -88,6 +78,18 @@ public class MainPanel {
         scrollPane.createHorizontalScrollBar();
         scrollPane.createVerticalScrollBar();
         scrollPane.setWheelScrollingEnabled(true);
+        drawBtn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                ProgramData programData = ProgramData.getInstance();
+                programData.setFormula(formulaTxtField.getText());
+                DefaultMathParser mathParser = DefaultMathParser.getInstance();
+                integralLabl.setText(mathParser.integralFunction(formulaTxtField.getText(), "x").toString());
+                derivateLabl.setText(mathParser.derivateFunction(formulaTxtField.getText(),"x").toString());
+
+                graphView.repaint();
+            }
+        });
     }
 
     public void createUIComponents() {
