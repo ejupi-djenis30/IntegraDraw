@@ -51,14 +51,21 @@
       </component>
       <scrollpane id="7b210" binding="scrollPane" custom-create="true">
         <constraints>
-          <grid row="3" column="0" row-span="1" col-span="8" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+          <grid row="3" column="0" row-span="1" col-span="8" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+            <minimum-size width="500" height="500"/>
+            <preferred-size width="500" height="500"/>
+          </grid>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
           <component id="dc760" class="com.planck.ui.widgets.GraphView" binding="graphView" custom-create="true">
             <constraints/>
-            <properties/>
+            <properties>
+              <maximumSize width="5000" height="5000"/>
+              <minimumSize width="5000" height="5000"/>
+              <preferredSize width="5000" height="5000"/>
+            </properties>
           </component>
         </children>
       </scrollpane>
