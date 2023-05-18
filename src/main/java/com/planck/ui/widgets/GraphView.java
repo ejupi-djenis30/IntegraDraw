@@ -22,6 +22,8 @@ public class GraphView extends JPanel {
         super.paintComponent(g);
         drawAxis(g);
 
+        drawNumbersOnLine(g);
+
         drawFormula(g);
     }
 
@@ -76,8 +78,56 @@ public class GraphView extends JPanel {
             GraphData.getInstance().setIntegralArea(DefaultMathParser.getInstance().calculateNumericalIntegral(function.getFunction(),programData.getLowLimit(),programData.getHighLimit(),"x"));
             GraphData.getInstance().setRectanglesArea(areaTotale);
         }
+    }
 
+    private void drawNumbersOnLine(Graphics g) {
+        final int X_middle = getWidth() / 2;
+        final int Y_middle = getHeight() / 2;
 
+        final int jump = 20;
 
+        int counter = 1;
+
+        Font numFont = new Font("Courier New", Font.PLAIN, 8);
+        Font originalFont = g.getFont();
+
+        g.setFont(numFont);
+
+        counter = -1;
+        for (int i = 20; i < X_middle; i += 20) {
+            g.drawLine(i, Y_middle - 10, i, Y_middle + 10);
+            drawNumber(counter, g, X_middle - i - 7, Y_middle - 20);
+            counter--;
+        }
+
+        counter = 1;
+        for (int i = X_middle + 20; i <= X_middle * 2; i += 20) {
+            g.drawLine(i, Y_middle - 10, i, Y_middle + 10);
+            drawNumber(counter, g, i - 3, Y_middle - 20);
+            counter++;
+        }
+
+        counter = 1;
+        for (int i = 20; i <= Y_middle; i += 20) {
+            g.drawLine(X_middle - 10, i, X_middle + 10, i);
+
+            if (counter > 1 && counter < 125)
+                drawNumber(counter, g, X_middle + 23, Y_middle - i);
+            counter++;
+        }
+
+        counter = - 1;
+        for (int i = Y_middle + 20; i <= Y_middle * 2; i += 20) {
+            g.drawLine(X_middle - 10, i, X_middle + 10, i);
+            if (counter < 125)
+                drawNumber(counter, g, X_middle + 23, i);
+            counter--;
+        }
+
+        g.setFont(originalFont);
+    }
+
+    private void drawNumber(int number, Graphics g, int x, int y) {
+        g.drawString(String.valueOf(number), x, y);
     }
 }
