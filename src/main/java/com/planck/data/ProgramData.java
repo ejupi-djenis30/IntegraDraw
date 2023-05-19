@@ -1,8 +1,10 @@
 package com.planck.data;
 
+import com.planck.math.MathFunction;
+
 public class ProgramData {
     private int rects;
-    private String formula;
+    private MathFunction formula;
     private int lowLimit;
     private int highLimit;
 
@@ -10,7 +12,7 @@ public class ProgramData {
 
     private ProgramData() {
         rects = 0;
-        formula = "";
+        formula = null;
         lowLimit = 0;
         highLimit = 0;
     }
@@ -30,12 +32,12 @@ public class ProgramData {
         this.rects = rects;
     }
 
-    public String getFormula() {
+    public MathFunction getFormula() {
         return formula;
     }
 
     public void setFormula(String formula) {
-        this.formula = formula;
+        this.formula = new MathFunction(formula, "x");
     }
 
     public int getLowLimit() {

@@ -33,11 +33,6 @@ public class DefaultMathParser {
         return util.eval("D(" + function + "," + variable + ")");
     }
 
-    public double calculateNumericalIntegral(IExpr function,int higherInterval, int lowerInterval, String forVariable) {
-        util.clearVariables();
-        return util.eval("NIntegrate(" + function.toString() + ", {"+ forVariable +", "+ lowerInterval +", "+ higherInterval+"})").evalDouble();
-    }
-
     public double calculateFunction(IExpr function, double variableValue, String variable){
         util.defineVariable(variable, variableValue);
         double value = util.eval(function).evalDouble();

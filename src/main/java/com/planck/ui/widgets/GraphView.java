@@ -48,11 +48,10 @@ public class GraphView extends JPanel {
 
     private void drawFormula(Graphics g) {
         g.setColor(Color.BLUE);
-        String formula = ProgramData.getInstance().getFormula();
-        if (formula.isEmpty())
+        MathFunction function = ProgramData.getInstance().getFormula();
+        if (function == null)
             return;
 
-        MathFunction function = new MathFunction(formula, "x");
         int limitW = getWidth() / 2;
         int limitH = getHeight() / 2;
         ArrayList<Double> values = function.getValuesGivenInterval(-limitW, limitW, 1);
@@ -64,17 +63,21 @@ public class GraphView extends JPanel {
         }
 
         ProgramData programData = ProgramData.getInstance();
-        if(programData.getLowLimit() < programData.getHighLimit() && programData.getRects() > 0) {
+        if(programData.getLowLimit() < programData.getHighLimit()) {
             g.setColor(Color.RED);
-            ArrayList<Rectangle> rectangles = function.getRectangles(programData.getLowLimit(), programData.getHighLimit(), programData.getRects());
-            double areaTotale = 0;
-            for(Rectangle rectangle: rectangles) {
-                int y = values.get((int) (limitW + rectangle.getX())).intValue();
-                g.drawRect((int) rectangle.getX() + limitW, y < 0 ? (limitH) : (int) (limitH - rectangle.getHeight()), (int) rectangle.getWidth(), (int) rectangle.getHeight());
-                areaTotale += y > 0 ? rectangle.getArea() : -rectangle.getArea();
+            GraphData graphData = GraphData.getInstance();
+            if(programData.getRects() != 0) {
+                ArrayList<Rectangle> rectangles = function.getRectangles(programData.getLowLimit(), programData.getHighLimit(), programData.getRects());
+                double areaTotale = 0;
+                for(Rectangle rectangle: rectangles) {
+                    int y = values.get((int) (limitW + rectangle.getX())).intValue();
+                    g.drawRect((int) rectangle.getX() + limitW, y < -0.1 ? (limitH) : (int) (limitH - rectangle.getHeight()), (int) rectangle.getWidth(), (int) rectangle.getHeight());
+                    areaTotale += rectangle.getArea();
+                }
+                graphData.setRectanglesArea(areaTotale);
             }
-            GraphData.getInstance().setIntegralArea(DefaultMathParser.getInstance().calculateNumericalIntegral(function.getFunction(),programData.getLowLimit(),programData.getHighLimit(),"x"));
-            GraphData.getInstance().setRectanglesArea(areaTotale);
+
+            graphData.setIntegralArea(function.calculateNumericalIntegral( programData.getHighLimit(), programData.getLowLimit()));
         }
 
 

@@ -6,8 +6,12 @@
   <component name="ChangeListManager">
     <list default="true" id="a486d4da-e519-438b-88c6-029d023b2b73" name="Changes" comment="quadrati">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/ui/MainPanel.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/ui/MainPanel.form" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/data/ProgramData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/data/ProgramData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/math/DefaultMathParser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/math/DefaultMathParser.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/math/MathFunction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/math/MathFunction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/math/Rectangle.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/math/Rectangle.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/ui/MainPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/ui/MainPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/ui/widgets/GraphView.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/ui/widgets/GraphView.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

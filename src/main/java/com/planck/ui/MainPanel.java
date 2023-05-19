@@ -70,10 +70,10 @@ public class MainPanel {
             @Override
             public void keyReleased(KeyEvent e) {
                 ProgramData programData = ProgramData.getInstance();
+
                 programData.setFormula(formulaTxtField.getText());
-                DefaultMathParser mathParser = DefaultMathParser.getInstance();
-                integralLabl.setText(mathParser.integralFunction(formulaTxtField.getText(), "x").toString());
-                derivateLabl.setText(mathParser.derivateFunction(formulaTxtField.getText(),"x").toString());
+                integralLabl.setText(programData.getFormula().getIntegral().toString());
+                derivateLabl.setText(programData.getFormula().getDerivate().toString());
 
                 graphView.repaint();
             }
