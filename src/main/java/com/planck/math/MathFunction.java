@@ -13,6 +13,8 @@ public class MathFunction {
     public MathFunction(String function, String variable) {
         this.variable = variable;
         this.function = DefaultMathParser.getInstance().parseFunction(function);
+        this.integral = DefaultMathParser.getInstance().integralFunction(function,variable);
+        this.derivate = DefaultMathParser.getInstance().derivateFunction(function, variable);
     }
 
     public ArrayList<Double> getValuesGivenInterval(double lower, double higher, double step) {
@@ -27,9 +29,10 @@ public class MathFunction {
     public ArrayList<Rectangle> getRectangles(double lowerInterval, double higherInterval, int numberOfRectangles) {
         ArrayList<Rectangle> rectangles = new ArrayList<Rectangle>();
         double mediumWidth = (higherInterval - lowerInterval) / numberOfRectangles;
-            for(double i = lowerInterval; i < higherInterval; i += mediumWidth) {
-                double y = DefaultMathParser.getInstance().calculateFunction(function,i, variable);
-                rectangles.add(new Rectangle(i, Math.abs(y),mediumWidth));
+            for(int i = 0; i <= numberOfRectangles; i++) {
+                double x = (i * mediumWidth) + lowerInterval;
+                double y = DefaultMathParser.getInstance().calculateFunction(function,x, variable);
+                rectangles.add(new Rectangle(x - (mediumWidth / 2), y,mediumWidth));
             }
 
         return rectangles;
@@ -43,13 +46,20 @@ public class MathFunction {
         return function;
     }
 
-    public void setFunction(String function) {
-        this.function = DefaultMathParser.getInstance().parseFunction(function);
+    public IExpr getIntegral() {
+        return integral;
     }
 
-    public void changeVariable(String variable) {
-        this.variable = variable;
+    public IExpr getDerivate() {
+        return derivate;
     }
 
+    public double calculateNumericalIntegral(int higherInterval, int lowerInterval) {
+        double higherIntegralValue = DefaultMathParser.getInstance().calculateFunction(integral,higherInterval,variable);
+        double lowIntervalValue = DefaultMathParser.getInstance().calculateFunction(integral,lowerInterval,variable);
+        System.out.println(higherIntegralValue);
+        System.out.println(lowIntervalValue);
+        return higherIntegralValue - lowIntervalValue;
 
+    }
 }
