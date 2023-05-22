@@ -1,8 +1,10 @@
 package com.planck.math;
 
+import com.planck.data.GraphData;
 import org.matheclipse.core.interfaces.IExpr;
 
 import java.util.ArrayList;
+import java.util.Stack;
 
 public class MathFunction {
     private IExpr function;
@@ -19,8 +21,8 @@ public class MathFunction {
 
     public ArrayList<Double> getValuesGivenInterval(double lower, double higher, double step) {
         ArrayList<Double> values = new ArrayList<Double>();
-            for(double i = lower; i < higher; i += step) {
-                Double y = DefaultMathParser.getInstance().calculateFunction(function,i,variable);
+            for(double i = lower; i <= higher; i += step) {
+                Double y = getValueAt(i);
                 values.add(y);
             }
         return values;
@@ -29,14 +31,39 @@ public class MathFunction {
     public ArrayList<Rectangle> getRectangles(double lowerInterval, double higherInterval, int numberOfRectangles) {
         ArrayList<Rectangle> rectangles = new ArrayList<Rectangle>();
         double mediumWidth = (higherInterval - lowerInterval) / numberOfRectangles;
-            for(int i = 0; i <= numberOfRectangles; i++) {
-                double x = (i * mediumWidth) + lowerInterval;
-                double y = DefaultMathParser.getInstance().calculateFunction(function,x, variable);
-                rectangles.add(new Rectangle(x - (mediumWidth / 2), y,mediumWidth));
-            }
+        double rectArea = 0;
+        for (int i = 0; i <= numberOfRectangles; i++) {
+            double x = (i * mediumWidth) + lowerInterval;
+            double y = getValueAt(x);
+            Rectangle rectangle = new Rectangle(x - (mediumWidth / 2), y, mediumWidth);
+            rectangles.add(rectangle);
+            rectArea += rectangle.getArea();
+        }
 
+        GraphData.getInstance().setRectanglesArea(rectArea);
         return rectangles;
     }
+
+    public void getTrapezoids(double lowerInterval, double higherInterval, int numberOfTrapezoids) {
+        ArrayList<Trapezoid> trapezoids = new ArrayList<Trapezoid>();
+        double stepSize = (higherInterval - lowerInterval) / numberOfTrapezoids;
+        double trapArea = 0;
+
+        for (int i = 0; i <= numberOfTrapezoids; i++) {
+            double x1 = lowerInterval + (i * stepSize);
+            double x2 = lowerInterval + ((i + 1) * stepSize);
+            double y1 = getValueAt(x1);
+            double y2 = getValueAt(x2);
+
+            Trapezoid trapezoid = new Trapezoid(x1, y1, x2, y2);
+            trapezoids.add(trapezoid);
+            trapArea += trapezoid.getArea();
+        }
+
+        GraphData.getInstance().setTrapArea(trapArea);
+    }
+
+
 
     public double getValueAt(double value) {
         return DefaultMathParser.getInstance().calculateFunction(function,value,variable);
@@ -57,8 +84,6 @@ public class MathFunction {
     public double calculateNumericalIntegral(int higherInterval, int lowerInterval) {
         double higherIntegralValue = DefaultMathParser.getInstance().calculateFunction(integral,higherInterval,variable);
         double lowIntervalValue = DefaultMathParser.getInstance().calculateFunction(integral,lowerInterval,variable);
-        System.out.println(higherIntegralValue);
-        System.out.println(lowIntervalValue);
         return higherIntegralValue - lowIntervalValue;
 
     }

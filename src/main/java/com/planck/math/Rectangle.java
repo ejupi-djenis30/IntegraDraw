@@ -8,9 +8,8 @@ public class Rectangle {
 
     public Rectangle(double x,double height, double width) {
         this.x = x;
-        this.height = Math.abs(height);
+        this.height = height;
         this.width = width;
-        this.area = this.width * height;
     }
 
     public double getX() {
@@ -26,6 +25,6 @@ public class Rectangle {
     }
 
     public double getArea() {
-        return area;
+        return area = width * height;
     }
 }

@@ -2,8 +2,6 @@ package com.planck.ui.widgets;
 
 import com.planck.data.GraphData;
 import com.planck.data.ProgramData;
-import com.planck.math.DefaultMathParser;
-import com.planck.math.MathFunction;
 import com.planck.math.Rectangle;
 
 import javax.swing.*;
@@ -11,16 +9,18 @@ import java.awt.*;
 import java.util.ArrayList;
 
 public class GraphView extends JPanel {
-
+    final int jump = 20;
     public GraphView() {
         super();
         setBackground(Color.WHITE);
     }
 
     @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
+     public void paint(Graphics g) {
+        super.paint(g);
         drawAxis(g);
+
+        drawNumbersOnLine(g);
 
         drawFormula(g);
     }
@@ -48,39 +48,80 @@ public class GraphView extends JPanel {
 
     private void drawFormula(Graphics g) {
         g.setColor(Color.BLUE);
-        MathFunction function = ProgramData.getInstance().getFormula();
-        if (function == null)
-            return;
-
-        int limitW = getWidth() / 2;
-        int limitH = getHeight() / 2;
-        ArrayList<Double> values = function.getValuesGivenInterval(-limitW, limitW, 1);
-        int i = 0;
-        for (Double value : values) {
-            int currentSegment = value.intValue();
-            g.drawLine(i, (limitH - currentSegment), i + 1, ((i + 1 >= values.size()) ? limitH - currentSegment : limitH - values.get(i + 1).intValue()) );
-            i += 1;
-        }
-
         ProgramData programData = ProgramData.getInstance();
-        if(programData.getLowLimit() < programData.getHighLimit()) {
-            g.setColor(Color.RED);
-            GraphData graphData = GraphData.getInstance();
-            if(programData.getRects() != 0) {
-                ArrayList<Rectangle> rectangles = function.getRectangles(programData.getLowLimit(), programData.getHighLimit(), programData.getRects());
-                double areaTotale = 0;
+        GraphData graphData = GraphData.getInstance();
+
+        if(programData.getIntervalValues() != null) {
+            int limitW = getWidth() / 2;
+            int limitH = getHeight() / 2;
+            ArrayList<Double> values = programData.getIntervalValues();
+            int i = 0;
+            for (Double value : values) {
+                int currentSegment = (int) (value * jump);
+                int nextSegment = (int) (values.get(i + 1 >= values.size() ? i : i + 1) * jump);
+                int nextPoint = ((i + 1) * jump);
+                g.drawLine((i * jump), (limitH - currentSegment), nextPoint, limitH - nextSegment);
+                i += 1;
+            }
+            if(programData.getRectangles() != null && programData.getLowLimit() > -limitW && programData.getHighLimit() < limitH) {
+                g.setColor(Color.RED);
+                ArrayList<Rectangle> rectangles = programData.getRectangles();
                 for(Rectangle rectangle: rectangles) {
-                    int y = values.get((int) (limitW + rectangle.getX())).intValue();
-                    g.drawRect((int) rectangle.getX() + limitW, y < -0.1 ? (limitH) : (int) (limitH - rectangle.getHeight()), (int) rectangle.getWidth(), (int) rectangle.getHeight());
-                    areaTotale += rectangle.getArea();
+                    double y = values.get((int) ((limitW/20) + rectangle.getX()));
+                    g.drawRect((int) (rectangle.getX() * jump) + limitW, y < -Double.MIN_VALUE? (limitH) : (int) (limitH - (Math.abs(rectangle.getHeight()) * jump)), (int) (rectangle.getWidth() * jump), (int) (Math.abs(rectangle.getHeight()) * jump));
                 }
-                graphData.setRectanglesArea(areaTotale);
             }
 
-            graphData.setIntegralArea(function.calculateNumericalIntegral( programData.getHighLimit(), programData.getLowLimit()));
         }
 
+    }
 
+    private void drawNumbersOnLine(Graphics g) {
+        final int X_middle = getWidth() / 2;
+        final int Y_middle = getHeight() / 2;
 
+        int counter = 1;
+
+        Font numFont = new Font("Courier New", Font.PLAIN, 8);
+        Font originalFont = g.getFont();
+
+        g.setFont(numFont);
+
+        counter = -1;
+        for (int i = 20; i < X_middle; i += 20) {
+            g.drawLine(i, Y_middle - 10, i, Y_middle + 10);
+            drawNumber(counter, g, X_middle - i - 7, Y_middle - 20);
+            counter--;
+        }
+
+        counter = 1;
+        for (int i = X_middle + 20; i <= X_middle * 2; i += 20) {
+            g.drawLine(i, Y_middle - 10, i, Y_middle + 10);
+            drawNumber(counter, g, i - 3, Y_middle - 20);
+            counter++;
+        }
+
+        counter = 1;
+        for (int i = 20; i <= Y_middle; i += 20) {
+            g.drawLine(X_middle - 10, i, X_middle + 10, i);
+
+            if (counter > 1 && counter < 125)
+                drawNumber(counter, g, X_middle + 23, Y_middle - i);
+            counter++;
+        }
+
+        counter = - 1;
+        for (int i = Y_middle + 20; i <= Y_middle * 2; i += 20) {
+            g.drawLine(X_middle - 10, i, X_middle + 10, i);
+            if (counter < 125)
+                drawNumber(counter, g, X_middle + 23, i);
+            counter--;
+        }
+
+        g.setFont(originalFont);
+    }
+
+    private void drawNumber(int number, Graphics g, int x, int y) {
+        g.drawString(String.valueOf(number), x, y);
     }
 }

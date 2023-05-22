@@ -1,12 +1,19 @@
 package com.planck.data;
 
 import com.planck.math.MathFunction;
+import com.planck.math.Rectangle;
+
+import java.util.ArrayList;
 
 public class ProgramData {
     private int rects;
     private MathFunction formula;
     private int lowLimit;
     private int highLimit;
+
+    private ArrayList<Double> intervalValues;
+
+    private ArrayList<Rectangle> rectangles;
 
     private static ProgramData currentInstance;
 
@@ -15,6 +22,8 @@ public class ProgramData {
         formula = null;
         lowLimit = 0;
         highLimit = 0;
+        intervalValues = null;
+        rectangles = null;
     }
 
     public static synchronized ProgramData getInstance() {
@@ -36,8 +45,8 @@ public class ProgramData {
         return formula;
     }
 
-    public void setFormula(String formula) {
-        this.formula = new MathFunction(formula, "x");
+    public void setFormula(MathFunction formula) {
+        this.formula = formula;
     }
 
     public int getLowLimit() {
@@ -54,5 +63,21 @@ public class ProgramData {
 
     public void setHighLimit(int highLimit) {
         this.highLimit = highLimit;
+    }
+
+    public ArrayList<Double> getIntervalValues() {
+        return intervalValues;
+    }
+
+    public ArrayList<Rectangle> getRectangles() {
+        return rectangles;
+    }
+
+    public void setIntervalValues(ArrayList<Double> intervalValues) {
+        this.intervalValues = intervalValues;
+    }
+
+    public void setRectangles(ArrayList<Rectangle> rectangles) {
+        this.rectangles = rectangles;
     }
 }

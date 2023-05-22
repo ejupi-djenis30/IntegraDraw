@@ -2,16 +2,11 @@ package com.planck.ui;
 
 import com.planck.data.GraphData;
 import com.planck.data.ProgramData;
-import com.planck.math.DefaultMathParser;
+import com.planck.math.MathFunction;
 import com.planck.ui.widgets.GraphView;
 
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 
 public class MainPanel {
     public JPanel mainPanel;
@@ -27,67 +22,48 @@ public class MainPanel {
     private JLabel aRet;
     private JLabel aTrap;
     private JLabel aInt;
+    private JButton drawBtn;
 
 
     public MainPanel() {
 
-        lowSpin.addChangeListener( e -> {
-            int lowVal = Integer.parseInt(String.valueOf(lowSpin.getValue()));
-            ProgramData programData = ProgramData.getInstance();
-            programData.setLowLimit(lowVal);
-            graphView.repaint();
-
-            GraphData graphData = GraphData.getInstance();
-            aRet.setText("" + graphData.getRectanglesArea());
-            aTrap.setText("" + graphData.getTrapArea());
-            aInt.setText("" + graphData.getIntegralArea());
-        });
-
-        highSpin.addChangeListener(e -> {
-            int highVal = Integer.parseInt(String.valueOf(highSpin.getValue()));
-            ProgramData programData = ProgramData.getInstance();
-            programData.setHighLimit(highVal);
-            graphView.repaint();
-
-            GraphData graphData = GraphData.getInstance();
-            aRet.setText("" + graphData.getRectanglesArea());
-            aTrap.setText("" + graphData.getTrapArea());
-            aInt.setText("" + graphData.getIntegralArea());
-        });
-
-        rectSlider.addChangeListener(e -> {
-            ProgramData programData = ProgramData.getInstance();
-            programData.setRects(rectSlider.getValue());
-
-            rectNumLbl.setText(String.valueOf(programData.getRects()));
-            graphView.repaint();
-
-            GraphData graphData = GraphData.getInstance();
-            aRet.setText("" + graphData.getRectanglesArea());
-            aTrap.setText("" + graphData.getTrapArea());
-        });
-        formulaTxtField.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyReleased(KeyEvent e) {
-                ProgramData programData = ProgramData.getInstance();
-
-                programData.setFormula(formulaTxtField.getText());
-                integralLabl.setText(programData.getFormula().getIntegral().toString());
-                derivateLabl.setText(programData.getFormula().getDerivate().toString());
-
-                graphView.repaint();
-            }
-        });
-        scrollPane.addComponentListener(new ComponentAdapter() {
-                                           @Override
-                                           public void componentResized(ComponentEvent e) {
-                                               graphView.repaint();
-                                           }
-                                       }
-        );
         scrollPane.createHorizontalScrollBar();
         scrollPane.createVerticalScrollBar();
         scrollPane.setWheelScrollingEnabled(true);
+        rectSlider.setMinimum(0);
+
+        rectSlider.addChangeListener(e -> {
+            rectNumLbl.setText(String.valueOf(rectSlider.getValue()));
+        });
+        drawBtn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                ProgramData programData = ProgramData.getInstance();
+                GraphData graphData = GraphData.getInstance();
+                String formula = formulaTxtField.getText();
+                if(!formula.isEmpty() && !formula.isBlank()) {
+                    double limitW = graphView.getWidth() / 40;
+                    MathFunction function = new MathFunction(formula, "x");
+                    programData.setFormula(function);
+                    programData.setIntervalValues(function.getValuesGivenInterval(-limitW, limitW, 1.0));
+                    integralLabl.setText(programData.getFormula().getIntegral().toString());
+                    derivateLabl.setText(programData.getFormula().getDerivate().toString());
+                    int lowVal = Integer.parseInt(String.valueOf(lowSpin.getValue()));
+                    int highVal = Integer.parseInt(String.valueOf(highSpin.getValue()));
+                    int rects = rectSlider.getValue() - 1;
+                    if(lowVal < highVal) {
+                        programData.setRects(rects);
+                        programData.setRectangles(function.getRectangles(lowVal,highVal, rects));
+                        function.getTrapezoids(lowVal,highVal,rects * 10);
+                        aRet.setText(String.valueOf(graphData.getRectanglesArea()));
+                        aTrap.setText(String.valueOf(graphData.getTrapArea()));
+                        aInt.setText(String.valueOf(function.calculateNumericalIntegral(highVal,lowVal)));
+                    }
+                }
+                graphView.repaint();
+
+            }
+        });
     }
 
     public void createUIComponents() {
