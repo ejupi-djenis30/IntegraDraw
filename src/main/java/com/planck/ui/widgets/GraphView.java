@@ -63,12 +63,11 @@ public class GraphView extends JPanel {
                 g.drawLine((i * jump), (limitH - currentSegment), nextPoint, limitH - nextSegment);
                 i += 1;
             }
-            if(programData.getRectangles() != null && programData.getLowLimit() > -limitW && programData.getHighLimit() < limitH) {
+            if(programData.getRectangles() != null) {
                 g.setColor(Color.RED);
                 ArrayList<Rectangle> rectangles = programData.getRectangles();
                 for(Rectangle rectangle: rectangles) {
-                    double y = values.get((int) ((limitW/20) + rectangle.getX()));
-                    g.drawRect((int) (rectangle.getX() * jump) + limitW, y < -Double.MIN_VALUE? (limitH) : (int) (limitH - (Math.abs(rectangle.getHeight()) * jump)), (int) (rectangle.getWidth() * jump), (int) (Math.abs(rectangle.getHeight()) * jump));
+                    g.drawRect((int) (rectangle.getX() * jump) + limitW, (int) (limitH - (rectangle.getHeight() * jump * (rectangle.getHeight() > 0 ? 1 : 0))), (int) (rectangle.getWidth() * jump), (int) (Math.abs(rectangle.getHeight()) * jump));
                 }
             }
 

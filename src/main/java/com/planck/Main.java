@@ -13,7 +13,7 @@ public class Main {
         mainWindow.setContentPane(new MainPanel().mainPanel);
         mainWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         mainWindow.setMinimumSize(new Dimension(1000, 1000));
-        mainWindow.setTitle("IntegralDraw");
+        mainWindow.setTitle("IntegraDraw");
         mainWindow.setVisible(true);
 
     }

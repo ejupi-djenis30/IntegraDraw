@@ -1,5 +1,6 @@
 package com.planck.math;
 
+import com.ibm.icu.impl.CalendarAstronomer;
 import com.planck.data.GraphData;
 import org.matheclipse.core.interfaces.IExpr;
 
@@ -22,8 +23,12 @@ public class MathFunction {
     public ArrayList<Double> getValuesGivenInterval(double lower, double higher, double step) {
         ArrayList<Double> values = new ArrayList<Double>();
             for(double i = lower; i <= higher; i += step) {
-                Double y = getValueAt(i);
-                values.add(y);
+                try {
+                    Double y = getValueAt(i);
+                    values.add(y);
+                } catch (Exception e) {}
+
+
             }
         return values;
     }
@@ -33,11 +38,16 @@ public class MathFunction {
         double mediumWidth = (higherInterval - lowerInterval) / numberOfRectangles;
         double rectArea = 0;
         for (int i = 0; i <= numberOfRectangles; i++) {
-            double x = (i * mediumWidth) + lowerInterval;
-            double y = getValueAt(x);
-            Rectangle rectangle = new Rectangle(x - (mediumWidth / 2), y, mediumWidth);
-            rectangles.add(rectangle);
-            rectArea += rectangle.getArea();
+            try {
+                double x = (i * mediumWidth) + lowerInterval;
+                double y = getValueAt(x);
+                Rectangle rectangle = new Rectangle(x - (mediumWidth / 2), y, mediumWidth);
+                rectangles.add(rectangle);
+                rectArea += rectangle.getArea();
+            } catch(Exception e) {
+                rectArea = 0;
+            }
+
         }
 
         GraphData.getInstance().setRectanglesArea(rectArea);
@@ -50,14 +60,18 @@ public class MathFunction {
         double trapArea = 0;
 
         for (int i = 0; i <= numberOfTrapezoids; i++) {
-            double x1 = lowerInterval + (i * stepSize);
-            double x2 = lowerInterval + ((i + 1) * stepSize);
-            double y1 = getValueAt(x1);
-            double y2 = getValueAt(x2);
+            try {
+                double x1 = lowerInterval + (i * stepSize);
+                double x2 = lowerInterval + ((i + 1) * stepSize);
+                double y1 = getValueAt(x1);
+                double y2 = getValueAt(x2);
 
-            Trapezoid trapezoid = new Trapezoid(x1, y1, x2, y2);
-            trapezoids.add(trapezoid);
-            trapArea += trapezoid.getArea();
+                Trapezoid trapezoid = new Trapezoid(x1, y1, x2, y2);
+                trapezoids.add(trapezoid);
+                trapArea += trapezoid.getArea();
+            } catch (Exception e) {
+                trapArea = 0;
+            }
         }
 
         GraphData.getInstance().setTrapArea(trapArea);

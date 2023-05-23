@@ -23,6 +23,7 @@ public class MainPanel {
     private JLabel aTrap;
     private JLabel aInt;
     private JButton drawBtn;
+    private JSpinner rectSpin;
 
 
     public MainPanel() {
@@ -30,11 +31,7 @@ public class MainPanel {
         scrollPane.createHorizontalScrollBar();
         scrollPane.createVerticalScrollBar();
         scrollPane.setWheelScrollingEnabled(true);
-        rectSlider.setMinimum(0);
 
-        rectSlider.addChangeListener(e -> {
-            rectNumLbl.setText(String.valueOf(rectSlider.getValue()));
-        });
         drawBtn.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -50,7 +47,7 @@ public class MainPanel {
                     derivateLabl.setText(programData.getFormula().getDerivate().toString());
                     int lowVal = Integer.parseInt(String.valueOf(lowSpin.getValue()));
                     int highVal = Integer.parseInt(String.valueOf(highSpin.getValue()));
-                    int rects = rectSlider.getValue() - 1;
+                    int rects = Integer.parseInt(rectSpin.getValue().toString()) - 1;
                     if(lowVal < highVal) {
                         programData.setRects(rects);
                         programData.setRectangles(function.getRectangles(lowVal,highVal, rects));

@@ -5,12 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="624c49d3-dbe2-456d-a657-25e7f7be9f21" name="Changes" comment="Adesso il panel è molto più grande">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/planck/math/Trapezoid.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/data/ProgramData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/data/ProgramData.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/math/MathFunction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/math/MathFunction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/math/Rectangle.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/math/Rectangle.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/ui/MainPanel.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/ui/MainPanel.form" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/ui/MainPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/ui/MainPanel.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/planck/ui/widgets/GraphView.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/planck/ui/widgets/GraphView.java" afterDir="false" />
@@ -38,18 +35,18 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;UI_DESIGNER_EDITOR_MODE.PaletteManager.WIDTH&quot;: &quot;165&quot;,
-    &quot;UI_DESIGNER_EDITOR_MODE.UIDesignerToolWindowManager.WIDTH&quot;: &quot;290&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;linea__numeri&quot;,
-    &quot;onboarding.tips.debug.path&quot;: &quot;/home/djenise/IdeaProjects/IntegraDraw/src/main/java/org/example/Main.java&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "UI_DESIGNER_EDITOR_MODE.PaletteManager.WIDTH": "162",
+    "UI_DESIGNER_EDITOR_MODE.UIDesignerToolWindowManager.WIDTH": "213",
+    "git-widget-placeholder": "linea__numeri",
+    "onboarding.tips.debug.path": "/home/djenise/IdeaProjects/IntegraDraw/src/main/java/org/example/Main.java"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration name="IntegralDraw" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.planck.Main" />
