@@ -1,0 +1,26 @@
+name: Feature request
+description: Propose a focused improvement to the numerical workbench.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is difficult today?
+      description: Explain the learning, numerical or workflow problem.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Describe what a user should be able to understand or do.
+    validations:
+      required: true
+  - type: textarea
+    id: accuracy
+    attributes:
+      label: Numerical and testing considerations
+      description: Note expected formulas, edge cases or reference values when relevant.
+    validations:
+      required: true
