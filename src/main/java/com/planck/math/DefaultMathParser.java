@@ -1,44 +1,55 @@
 package com.planck.math;
 
 import org.matheclipse.core.eval.ExprEvaluator;
-import org.matheclipse.core.expression.F;
 import org.matheclipse.core.interfaces.IExpr;
 
-public class DefaultMathParser {
-    private ExprEvaluator util;
-    private static DefaultMathParser instance;
+/**
+ * Small synchronized adapter around Symja's stateful evaluator.
+ */
+public final class DefaultMathParser {
+    private static final DefaultMathParser INSTANCE = new DefaultMathParser();
+
+    private final ExprEvaluator evaluator = new ExprEvaluator();
+
     private DefaultMathParser() {
-        util = new ExprEvaluator();
     }
 
     public static DefaultMathParser getInstance() {
-        if(instance == null) {
-            instance = new DefaultMathParser();
-        }
-        return instance;
+        return INSTANCE;
     }
 
-    public IExpr parseFunction(String function) {
-        return util.parse(function);
+    public synchronized IExpr parseFunction(String function) {
+        return evaluator.parse(function);
     }
 
-
-    public IExpr integralFunction(String function, String variable) {
-        util.clearVariables();
-        return util.eval("integrate(" + function + "," + variable + ")");
+    public synchronized IExpr integralFunction(String function, String variable) {
+        evaluator.clearVariables();
+        return evaluator.eval("Integrate(" + function + "," + variable + ")");
     }
 
+    public synchronized IExpr derivativeFunction(String function, String variable) {
+        evaluator.clearVariables();
+        return evaluator.eval("D(" + function + "," + variable + ")");
+    }
+
+    /** @deprecated Kept for source compatibility with the original prototype. */
+    @Deprecated
     public IExpr derivateFunction(String function, String variable) {
-        util.clearVariables();
-        return util.eval("D(" + function + "," + variable + ")");
+        return derivativeFunction(function, variable);
     }
 
-    public double calculateFunction(IExpr function, double variableValue, String variable){
-        util.defineVariable(variable, variableValue);
-        double value = util.eval(function).evalDouble();
-        util.clearVariables();
-        return value;
+    public synchronized double calculateFunction(IExpr function, double variableValue, String variable) {
+        try {
+            evaluator.defineVariable(variable, variableValue);
+            double result = evaluator.eval(function).evalDouble();
+            if (!Double.isFinite(result)) {
+                throw new ArithmeticException("The function is not finite at x = " + variableValue + ".");
+            }
+            return result;
+        } catch (RuntimeException exception) {
+            throw new IllegalArgumentException("The function cannot be evaluated at x = " + variableValue + ".", exception);
+        } finally {
+            evaluator.clearVariables();
+        }
     }
-
-
 }
