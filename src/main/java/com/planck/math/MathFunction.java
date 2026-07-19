@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 public final class MathFunction {
     private static final Pattern SAFE_EXPRESSION = Pattern.compile("[A-Za-z0-9_+\\-*/^().,\\s]+");
     private static final int MAX_EXPRESSION_LENGTH = 160;
+    private static final int MAX_SAMPLE_COUNT = 100_000;
     private static final double MAX_INTERVAL_WIDTH = 10_000.0;
 
     private final String source;
@@ -50,12 +51,13 @@ public final class MathFunction {
         if (!Double.isFinite(step) || step <= 0) {
             throw new IllegalArgumentException("The sampling step must be positive.");
         }
-        long sampleCount = (long) Math.ceil((higher - lower) / step);
-        if (sampleCount > 100_000) {
+        long requestedSampleCount = Math.max(1L, (long) Math.ceil((higher - lower) / step));
+        if (requestedSampleCount > MAX_SAMPLE_COUNT) {
             throw new IllegalArgumentException("The requested sample contains too many points.");
         }
+        int sampleCount = Math.toIntExact(requestedSampleCount);
 
-        List<Double> values = new ArrayList<>((int) sampleCount);
+        List<Double> values = new ArrayList<>(sampleCount);
         for (int index = 0; index < sampleCount; index++) {
             values.add(valueAt(lower + index * step));
         }
