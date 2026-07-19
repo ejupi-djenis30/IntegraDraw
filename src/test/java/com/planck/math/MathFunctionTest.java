@@ -61,7 +61,15 @@ class MathFunctionTest {
 
         assertThrows(IllegalArgumentException.class, () -> function.getRectangles(1, 1, 10));
         assertThrows(IllegalArgumentException.class, () -> function.getRectangles(1, -1, 10));
+        assertThrows(IllegalArgumentException.class, () -> function.getRectangles(-5_001, 5_001, 10));
         assertThrows(IllegalArgumentException.class, () -> function.getRectangles(0, 1, 0));
+    }
+
+    @Test
+    void rejectsNonFiniteFunctionValues() {
+        MathFunction function = new MathFunction("x*x", "x");
+
+        assertThrows(IllegalArgumentException.class, () -> function.valueAt(Double.MAX_VALUE));
     }
 
     @Test

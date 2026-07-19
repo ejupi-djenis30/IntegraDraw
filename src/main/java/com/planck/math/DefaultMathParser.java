@@ -41,7 +41,7 @@ public final class DefaultMathParser {
     public synchronized double calculateFunction(IExpr function, double variableValue, String variable) {
         try {
             evaluator.defineVariable(variable, variableValue);
-            double result = evaluator.eval(function).evalDouble();
+            double result = evaluator.eval(function).evalf();
             if (!Double.isFinite(result)) {
                 throw new ArithmeticException("The function is not finite at x = " + variableValue + ".");
             }
