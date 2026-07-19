@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 public final class MathFunction {
     private static final Pattern SAFE_EXPRESSION = Pattern.compile("[A-Za-z0-9_+\\-*/^().,\\s]+");
     private static final int MAX_EXPRESSION_LENGTH = 160;
+    private static final double MAX_INTERVAL_WIDTH = 10_000.0;
 
     private final String source;
     private final String variable;
@@ -141,6 +142,9 @@ public final class MathFunction {
         }
         if (lower >= higher) {
             throw new IllegalArgumentException("The lower bound must be smaller than the upper bound.");
+        }
+        if (higher - lower > MAX_INTERVAL_WIDTH) {
+            throw new IllegalArgumentException("Keep the interval width below 10,000.");
         }
     }
 }

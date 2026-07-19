@@ -98,6 +98,8 @@ Pull requests and pushes run:
 - expression-parser and integration tests;
 - the production Pages build.
 
+Each successful Java run publishes a short-lived build artifact containing the executable JAR, SHA-256 checksums and a CycloneDX SBOM. Dependabot monitors Maven, npm and GitHub Actions dependencies each month.
+
 ## Product demo
 
 The repository includes a 10-second, 1280×720 product demonstration built from real browser captures:
