@@ -77,4 +77,24 @@ class MathFunctionTest {
         assertThrows(IllegalArgumentException.class, () -> new MathFunction("x; quit", "x"));
         assertThrows(IllegalArgumentException.class, () -> new MathFunction("", "x"));
     }
+
+    @Test
+    void samplesWithAnIntegerBoundAfterValidatingTheRequestedCount() {
+        MathFunction function = new MathFunction("x", "x");
+
+        assertEquals(List.of(0.0, 0.25, 0.5, 0.75), function.getValuesGivenInterval(0, 1, 0.25));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> function.getValuesGivenInterval(0, 1, 1.0 / 100_001));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> function.getValuesGivenInterval(0, 1, Double.MIN_VALUE));
+    }
+
+    @Test
+    void keepsOneSampleWhenFloatingPointDivisionUnderflows() {
+        MathFunction function = new MathFunction("x", "x");
+
+        assertEquals(List.of(0.0), function.getValuesGivenInterval(0, Double.MIN_VALUE, Double.MAX_VALUE));
+    }
 }

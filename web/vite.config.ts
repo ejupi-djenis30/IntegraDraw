@@ -7,6 +7,6 @@ export default defineConfig({
     sourcemap: true,
   },
   test: {
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "scripts/**/*.test.mjs"],
   },
 });
