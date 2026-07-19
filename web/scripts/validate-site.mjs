@@ -9,6 +9,7 @@ for (const file of [
   "public/brand-mark.svg",
   "public/favicon.svg",
   "public/poster.svg",
+  "public/social-preview.png",
   "public/integradraw-demo.mp4",
 ]) {
   await access(new URL(file, root));
@@ -16,6 +17,10 @@ for (const file of [
 
 for (const token of [
   '<html lang="en">',
+  'name="referrer" content="no-referrer"',
+  'http-equiv="Content-Security-Policy"',
+  'content="https://ejupi-djenis30.github.io/IntegraDraw/social-preview.png"',
+  'name="twitter:card" content="summary_large_image"',
   "<main",
   "<video",
   'poster="./poster.svg"',
@@ -26,6 +31,16 @@ for (const token of [
 }
 
 assert.ok(config.includes('base: "/IntegraDraw/"'), "Vite must retain the project Pages base path.");
+
+const socialPreviewUrl = new URL("public/social-preview.png", root);
+const socialPreviewStats = await stat(socialPreviewUrl);
+assert.ok(socialPreviewStats.size <= 1_000_000, "Keep the social preview below 1 MB.");
+const socialPreviewHeader = await readFile(socialPreviewUrl);
+assert.equal(
+  socialPreviewHeader.subarray(1, 4).toString("ascii"),
+  "PNG",
+  "The social preview is not a PNG file.",
+);
 
 const videoUrl = new URL("public/integradraw-demo.mp4", root);
 const videoStats = await stat(videoUrl);

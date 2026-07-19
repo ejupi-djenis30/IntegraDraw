@@ -1,0 +1,48 @@
+name: Bug report
+description: Report a reproducible problem in the desktop app or browser workbench.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe what you observed and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      placeholder: "1. Enter f(x) = …\n2. Set the interval to …\n3. Choose … segments\n4. Observe …"
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - Browser workbench
+        - Java desktop app
+        - Build or packaging
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: "v1.1.0 or commit SHA"
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Function and numerical inputs
+      description: Include the function, bounds, segment count and method when they affect the result.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Report check
+      options:
+        - label: I removed secrets, private data and unrelated logs from this report.
+          required: true
