@@ -1,52 +1,80 @@
 import assert from "node:assert/strict";
-import { access, readFile, stat } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const root = new URL("../", import.meta.url);
-const html = await readFile(new URL("index.html", root), "utf8");
-const config = await readFile(new URL("vite.config.ts", root), "utf8");
 
-for (const file of [
-  "public/brand-mark.svg",
-  "public/favicon.svg",
-  "public/poster.svg",
-  "public/social-preview.png",
-  "public/integradraw-demo.mp4",
-]) {
-  await access(new URL(file, root));
+function isNodeError(error) {
+  return error instanceof Error && "code" in error;
 }
 
-for (const token of [
-  '<html lang="en">',
-  'name="referrer" content="no-referrer"',
-  'http-equiv="Content-Security-Policy"',
-  'content="https://ejupi-djenis30.github.io/IntegraDraw/social-preview.png"',
-  'name="twitter:card" content="summary_large_image"',
-  "<main",
-  "<video",
-  'poster="./poster.svg"',
-  'src="./integradraw-demo.mp4"',
-  "aria-label",
-]) {
-  assert.ok(html.includes(token), `index.html is missing ${token}`);
+export async function readRequiredFile(fileUrl, label) {
+  try {
+    return await readFile(fileUrl);
+  } catch (error) {
+    if (isNodeError(error) && error.code === "ENOENT") {
+      const missingFileError = new Error(`Required site file is missing: ${label}`, { cause: error });
+      missingFileError.code = "ENOENT";
+      throw missingFileError;
+    }
+
+    throw error;
+  }
 }
 
-assert.ok(config.includes('base: "/IntegraDraw/"'), "Vite must retain the project Pages base path.");
+async function readRequiredText(fileUrl, label) {
+  return (await readRequiredFile(fileUrl, label)).toString("utf8");
+}
 
-const socialPreviewUrl = new URL("public/social-preview.png", root);
-const socialPreviewStats = await stat(socialPreviewUrl);
-assert.ok(socialPreviewStats.size <= 1_000_000, "Keep the social preview below 1 MB.");
-const socialPreviewHeader = await readFile(socialPreviewUrl);
-assert.equal(
-  socialPreviewHeader.subarray(1, 4).toString("ascii"),
-  "PNG",
-  "The social preview is not a PNG file.",
-);
+export async function validateSite(siteRoot = root) {
+  const html = await readRequiredText(new URL("index.html", siteRoot), "index.html");
+  const config = await readRequiredText(new URL("vite.config.ts", siteRoot), "vite.config.ts");
 
-const videoUrl = new URL("public/integradraw-demo.mp4", root);
-const videoStats = await stat(videoUrl);
-assert.ok(videoStats.size >= 250_000, "The demo video is unexpectedly small.");
-assert.ok(videoStats.size <= 8_000_000, "Keep the demo video below 8 MB for a fast Page load.");
-const videoHeader = await readFile(videoUrl);
-assert.equal(videoHeader.subarray(4, 8).toString("ascii"), "ftyp", "The demo asset is not an MP4 file.");
+  for (const file of ["public/brand-mark.svg", "public/favicon.svg", "public/poster.svg"]) {
+    await readRequiredFile(new URL(file, siteRoot), file);
+  }
 
-console.log("IntegraDraw site validation passed.");
+  for (const token of [
+    '<html lang="en">',
+    'name="referrer" content="no-referrer"',
+    'http-equiv="Content-Security-Policy"',
+    'content="https://ejupi-djenis30.github.io/IntegraDraw/social-preview.png"',
+    'name="twitter:card" content="summary_large_image"',
+    "<main",
+    "<video",
+    'poster="./poster.svg"',
+    'src="./integradraw-demo.mp4"',
+    "aria-label",
+  ]) {
+    assert.ok(html.includes(token), `index.html is missing ${token}`);
+  }
+
+  assert.ok(config.includes('base: "/IntegraDraw/"'), "Vite must retain the project Pages base path.");
+
+  const socialPreview = await readRequiredFile(
+    new URL("public/social-preview.png", siteRoot),
+    "public/social-preview.png",
+  );
+  assert.ok(socialPreview.byteLength <= 1_000_000, "Keep the social preview below 1 MB.");
+  assert.equal(
+    socialPreview.subarray(1, 4).toString("ascii"),
+    "PNG",
+    "The social preview is not a PNG file.",
+  );
+
+  const video = await readRequiredFile(
+    new URL("public/integradraw-demo.mp4", siteRoot),
+    "public/integradraw-demo.mp4",
+  );
+  assert.ok(video.byteLength >= 250_000, "The demo video is unexpectedly small.");
+  assert.ok(video.byteLength <= 8_000_000, "Keep the demo video below 8 MB for a fast Page load.");
+  assert.equal(video.subarray(4, 8).toString("ascii"), "ftyp", "The demo asset is not an MP4 file.");
+}
+
+const isMainModule = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isMainModule) {
+  await validateSite();
+  console.log("IntegraDraw site validation passed.");
+}
