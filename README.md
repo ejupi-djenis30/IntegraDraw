@@ -110,6 +110,12 @@ The repository includes a 10-second, 1280×720 product demonstration built from 
 
 It moves from the hero to an eight-segment approximation, shows convergence at 160 segments and closes with the responsive mobile controls and graph. The storyboard keeps the longer capture plan reproducible.
 
+## Contributing and security
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before proposing a change and check
+[CHANGELOG.md](CHANGELOG.md) for the current project record. Report suspected vulnerabilities
+privately through [SECURITY.md](SECURITY.md), not through a public issue.
+
 ## Credits
 
 IntegraDraw started as a collaborative school project in 2023.
