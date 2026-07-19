@@ -14,15 +14,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
           cache: maven
       - name: Test and package desktop app
         run: mvn --batch-mode --no-transfer-progress verify
+      - name: Create SHA-256 checksum
+        run: sha256sum target/integradraw-1.1.0.jar target/bom.json > target/SHA256SUMS
+      - name: Upload desktop build
+        uses: actions/upload-artifact@v7
+        with:
+          name: integradraw-desktop
+          path: |
+            target/integradraw-1.1.0.jar
+            target/bom.json
+            target/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
 
   web:
     name: Web app
@@ -32,9 +44,9 @@ jobs:
         working-directory: web
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
