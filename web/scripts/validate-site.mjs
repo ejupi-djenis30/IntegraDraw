@@ -16,6 +16,8 @@ for (const file of [
 
 for (const token of [
   '<html lang="en">',
+  'name="referrer" content="no-referrer"',
+  'http-equiv="Content-Security-Policy"',
   "<main",
   "<video",
   'poster="./poster.svg"',
