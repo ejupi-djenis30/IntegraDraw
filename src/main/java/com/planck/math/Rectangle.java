@@ -1,16 +1,24 @@
 package com.planck.math;
 
-public class Rectangle {
-    private double x;
-    private double height;
-    private double width;
-    private double area;
+/**
+ * A midpoint rectangle. Height and area keep their mathematical sign; the
+ * absolute accessors are available when a drawing operation needs a magnitude.
+ */
+public final class Rectangle {
+    private final double x;
+    private final double height;
+    private final double width;
 
-    public Rectangle(double x,double height, double width) {
+    public Rectangle(double x, double height, double width) {
+        if (!Double.isFinite(x) || !Double.isFinite(height) || !Double.isFinite(width)) {
+            throw new IllegalArgumentException("Rectangle values must be finite.");
+        }
+        if (width <= 0) {
+            throw new IllegalArgumentException("Rectangle width must be positive.");
+        }
         this.x = x;
-        this.height = Math.abs(height);
+        this.height = height;
         this.width = width;
-        this.area = this.width * height;
     }
 
     public double getX() {
@@ -21,11 +29,19 @@ public class Rectangle {
         return height;
     }
 
+    public double getAbsoluteHeight() {
+        return Math.abs(height);
+    }
+
     public double getWidth() {
         return width;
     }
 
     public double getArea() {
-        return area;
+        return width * height;
+    }
+
+    public double getAbsoluteArea() {
+        return Math.abs(getArea());
     }
 }
