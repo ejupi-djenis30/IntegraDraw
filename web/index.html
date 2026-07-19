@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0e1111" />
+    <meta
+      name="description"
+      content="IntegraDraw turns definite integrals into an interactive comparison of midpoint rectangles, trapezoids and a numerical reference."
+    />
+    <meta property="og:title" content="IntegraDraw — See an integral take shape" />
+    <meta
+      property="og:description"
+      content="A visual calculus workbench rebuilt from a collaborative Java prototype."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://ejupi-djenis30.github.io/IntegraDraw/poster.svg" />
+    <meta property="og:video" content="https://ejupi-djenis30.github.io/IntegraDraw/integradraw-demo.mp4" />
+    <meta property="og:video:type" content="video/mp4" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <title>IntegraDraw — Visual calculus workbench</title>
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#workbench">Skip to the workbench</a>
+
+    <header class="site-header" aria-label="Primary navigation">
+      <a class="brand" href="#top" aria-label="IntegraDraw home">
+        <img src="./brand-mark.svg" alt="" width="44" height="44" />
+        <span>IntegraDraw</span>
+      </a>
+      <nav>
+        <a href="#demo">Demo</a>
+        <a href="#workbench">Workbench</a>
+        <a href="#build-notes">Build notes</a>
+        <a href="#credits">Credits</a>
+      </nav>
+      <a class="header-link" href="https://github.com/ejupi-djenis30/IntegraDraw">Source ↗</a>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy reveal">
+          <p class="eyebrow">Visual calculus / Java roots / Browser precision</p>
+          <h1 id="hero-title">See an integral<br /><span>take shape.</span></h1>
+          <p class="hero-intro">
+            Draw a function, split an interval and watch two numerical methods close in on the same answer.
+            The maths stays visible, including the error.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#workbench">Open the workbench <span aria-hidden="true">↓</span></a>
+            <a class="text-link" href="#build-notes">Read the build notes <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+
+        <div class="hero-object reveal" aria-hidden="true">
+          <div class="hero-index">∫</div>
+          <svg viewBox="0 0 720 520" role="presentation">
+            <defs>
+              <pattern id="hero-grid" width="48" height="48" patternUnits="userSpaceOnUse">
+                <path d="M 48 0 L 0 0 0 48" fill="none" stroke="currentColor" stroke-opacity=".12" />
+              </pattern>
+            </defs>
+            <rect width="720" height="520" fill="url(#hero-grid)" />
+            <line x1="40" y1="300" x2="680" y2="300" class="hero-axis" />
+            <g class="hero-bars">
+              <rect x="150" y="236" width="58" height="64" />
+              <rect x="208" y="178" width="58" height="122" />
+              <rect x="266" y="130" width="58" height="170" />
+              <rect x="324" y="112" width="58" height="188" />
+              <rect x="382" y="132" width="58" height="168" />
+              <rect x="440" y="181" width="58" height="119" />
+              <rect x="498" y="240" width="58" height="60" />
+            </g>
+            <path class="hero-curve" d="M80 356 C140 340 172 250 222 208 S318 96 370 112 S452 210 506 240 S596 310 650 180" />
+          </svg>
+          <div class="hero-measure">
+            <span>REFERENCE</span>
+            <strong>1.772415</strong>
+          </div>
+          <div class="hero-caption">Midpoint and trapezoidal rules, compared honestly.</div>
+        </div>
+      </section>
+
+      <section class="demo-section" id="demo" aria-labelledby="demo-title">
+        <div class="demo-inner">
+          <div class="demo-copy reveal">
+            <p class="eyebrow">10 seconds / Real interface</p>
+            <h2 id="demo-title">Watch the error shrink.</h2>
+            <p>
+              Start with eight visible rectangles, raise the resolution to 160 segments, then carry the same
+              workbench onto a phone. Every frame comes from the working application.
+            </p>
+          </div>
+          <figure class="demo-player reveal">
+            <video
+              controls
+              muted
+              loop
+              playsinline
+              preload="metadata"
+              poster="./poster.svg"
+              width="1280"
+              height="720"
+              aria-label="IntegraDraw demonstration showing numerical convergence and the responsive mobile interface"
+            >
+              <source src="./integradraw-demo.mp4" type="video/mp4" />
+              <a href="./integradraw-demo.mp4">Download the IntegraDraw demonstration.</a>
+            </video>
+            <figcaption>
+              <span>1280 × 720</span>
+              <span>Midpoint + trapezoidal</span>
+              <span>Desktop + mobile</span>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="workbench-section" id="workbench" aria-labelledby="workbench-title">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Live workbench</p>
+          <h2 id="workbench-title">Change the inputs.<br />The drawing answers.</h2>
+          <p>No account, backend or tracking. Every calculation runs in this page.</p>
+        </div>
+
+        <div class="workbench reveal">
+          <form class="controls" id="calculator" novalidate>
+            <div class="control-intro">
+              <span>01 / FUNCTION</span>
+              <p>Use <code>x</code>, standard operators and the functions listed below.</p>
+            </div>
+
+            <label class="field field-formula" for="formula">
+              <span>Function f(x)</span>
+              <input id="formula" name="formula" value="exp(-x^2)" autocomplete="off" spellcheck="false" aria-describedby="status" />
+            </label>
+
+            <fieldset class="presets">
+              <legend>Presets</legend>
+              <button type="button" class="preset is-active" data-preset="bell">Bell curve</button>
+              <button type="button" class="preset" data-preset="quadratic">Quadratic</button>
+              <button type="button" class="preset" data-preset="sine">Sine</button>
+              <button type="button" class="preset" data-preset="damped">Damped</button>
+            </fieldset>
+
+            <div class="field-row">
+              <label class="field" for="lower">
+                <span>Lower bound</span>
+                <input id="lower" name="lower" type="number" value="-3" step="0.25" aria-describedby="status" />
+              </label>
+              <label class="field" for="upper">
+                <span>Upper bound</span>
+                <input id="upper" name="upper" type="number" value="3" step="0.25" aria-describedby="status" />
+              </label>
+            </div>
+
+            <label class="field range-field" for="segments">
+              <span>Segments <output id="segment-output" for="segments">24</output></span>
+              <input id="segments" name="segments" type="range" min="2" max="160" value="24" aria-describedby="status" />
+            </label>
+
+            <div class="syntax-note">
+              <span>Supported</span>
+              <code>sin cos tan exp ln log sqrt abs</code>
+            </div>
+          </form>
+
+          <div class="visualizer">
+            <div class="plot-toolbar">
+              <div class="plot-legend" aria-label="Plot legend">
+                <span><i class="legend-line"></i> Function</span>
+                <span><i class="legend-rect"></i> Midpoint</span>
+                <span><i class="legend-trap"></i> Trapezoidal</span>
+              </div>
+              <div class="zoom-controls" aria-label="Graph zoom controls">
+                <button type="button" id="zoom-out" aria-label="Zoom out">−</button>
+                <button type="button" id="zoom-reset">Reset</button>
+                <button type="button" id="zoom-in" aria-label="Zoom in">+</button>
+              </div>
+            </div>
+            <div class="canvas-wrap">
+              <canvas
+                id="plot"
+                width="960"
+                height="620"
+                role="img"
+                aria-label="Graph of the selected function with midpoint rectangles and trapezoidal segments"
+              >
+                Your browser does not support the interactive graph.
+              </canvas>
+              <div class="equation-chip" aria-hidden="true">f(x) = <span id="equation-display">exp(−x²)</span></div>
+            </div>
+            <p class="status" id="status" role="status" aria-live="polite">Calculation ready.</p>
+          </div>
+
+          <div class="results" aria-label="Calculated results">
+            <article>
+              <span>Midpoint sum</span>
+              <strong id="midpoint-value">—</strong>
+              <small id="midpoint-error">Error —</small>
+            </article>
+            <article>
+              <span>Trapezoidal sum</span>
+              <strong id="trapezoidal-value">—</strong>
+              <small id="trapezoidal-error">Error —</small>
+            </article>
+            <article class="result-reference">
+              <span>Simpson reference</span>
+              <strong id="reference-value">—</strong>
+              <small>8,192 subintervals</small>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="method-strip" aria-label="Method summary">
+        <article class="reveal">
+          <span>01</span>
+          <h3>Parse</h3>
+          <p>A small expression parser accepts a deliberate maths vocabulary. It never calls JavaScript evaluation.</p>
+        </article>
+        <article class="reveal">
+          <span>02</span>
+          <h3>Approximate</h3>
+          <p>Exactly N intervals feed the midpoint and trapezoidal rules. Signed area stays signed.</p>
+        </article>
+        <article class="reveal">
+          <span>03</span>
+          <h3>Compare</h3>
+          <p>A high-resolution Simpson calculation provides a reference, so the error is visible instead of implied.</p>
+        </article>
+      </section>
+
+      <section class="build-notes" id="build-notes" aria-labelledby="notes-title">
+        <div class="notes-lead reveal">
+          <p class="eyebrow">2023 → now</p>
+          <h2 id="notes-title">The idea survived.<br /><span>The shortcuts did not.</span></h2>
+        </div>
+        <div class="notes-copy reveal">
+          <p class="large-copy">
+            The original Swing prototype made numerical integration visible. This rebuild keeps that idea and replaces
+            the brittle parts around it.
+          </p>
+          <dl>
+            <div><dt>Desktop</dt><dd>Java 17, code-built Swing UI, executable Maven JAR and JUnit coverage.</dd></div>
+            <div><dt>Browser</dt><dd>Strict TypeScript, Canvas rendering and a dependency-free expression engine.</dd></div>
+            <div><dt>Math</dt><dd>Correct interval counts, signed areas, bounded rendering and explicit validation.</dd></div>
+            <div><dt>Delivery</dt><dd>Automated tests for both implementations and a reproducible GitHub Pages build.</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="credits" id="credits" aria-labelledby="credits-title">
+        <div>
+          <p class="eyebrow">Project record</p>
+          <h2 id="credits-title">Built together.<br />Reworked in the open.</h2>
+        </div>
+        <div>
+          <p>
+            IntegraDraw began as a collaborative school project in 2023. Djenis Ejupi and the contributor recorded as
+            <code>NobodyToListen</code> in the Git history built the original Java prototype.
+          </p>
+          <p>
+            The commit history remains intact. This modernization is led by Djenis and keeps the earlier work visible
+            instead of rewriting its authorship.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <a class="brand footer-brand" href="#top">
+        <img src="./brand-mark.svg" alt="" width="38" height="38" />
+        <span>IntegraDraw</span>
+      </a>
+      <p>Numerical methods you can inspect.</p>
+      <a href="https://github.com/ejupi-djenis30/IntegraDraw">GitHub ↗</a>
+    </footer>
+  </body>
+</html>

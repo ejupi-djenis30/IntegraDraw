@@ -1,0 +1,19 @@
+{
+  "name": "integradraw-web",
+  "private": true,
+  "version": "1.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "validate": "node scripts/validate-site.mjs",
+    "check": "tsc --noEmit && vitest run && npm run validate"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.9.3",
+    "vite": "^8.1.0",
+    "vitest": "^4.1.9"
+  }
+}
