@@ -6,6 +6,12 @@ Notable changes to IntegraDraw are recorded here.
 
 - No unreleased changes.
 
+## 1.1.1 — 2026-07-20
+
+- Credit shared work collectively without publishing individual contributor identities.
+- Refine the Pages workbench with a precisely centered, symmetric numerical visual.
+- Keep the MIT release contract and packaged license evidence aligned after the privacy rewrite.
+
 ## 1.1.0 — 2026-07-19
 
 - Licensed the project under MIT with the approval of its original contributors and enabled verified release publication.

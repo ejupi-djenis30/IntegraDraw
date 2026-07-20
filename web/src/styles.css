@@ -241,15 +241,23 @@ h1 span {
 
 .hero-object svg {
   position: absolute;
-  inset: 8% -8% 12% 0;
-  width: 108%;
-  height: 80%;
+  top: 50%;
+  left: 50%;
+  width: 92%;
+  max-height: 78%;
+  transform: translate(-50%, -50%);
   color: var(--paper);
 }
 
 .hero-axis {
   stroke: rgb(251 248 241 / 32%);
   stroke-width: 1.5;
+}
+
+.hero-centerline {
+  stroke: rgb(251 248 241 / 16%);
+  stroke-dasharray: 5 9;
+  stroke-width: 1;
 }
 
 .hero-bars rect {
