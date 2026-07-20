@@ -27,14 +27,14 @@ npm run check
 2. Add a regression test for parser, validation or numerical changes.
 3. Run both verification commands when shared behavior changes.
 4. Keep generated `target`, `dist` and `node_modules` files out of Git.
-5. Update the README or demo notes when the public behavior changes.
+5. Update the README when the public behavior changes.
 
 ## Project guardrails
 
 - Keep interval and rendering limits aligned between Java and TypeScript.
 - Do not replace the expression parser with `eval` or another code-execution shortcut.
 - Preserve signed areas and make approximation error visible.
-- Use reproducible examples in screenshots and demo recordings.
+- Use reproducible examples in screenshots and documentation.
 - Keep the original contributors and project history credited accurately.
 
 ## Security reports

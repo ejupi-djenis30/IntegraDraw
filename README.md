@@ -5,11 +5,11 @@
 
 **A visual calculus workbench for comparing numerical integration methods.**
 
-[Live workbench](https://ejupi-djenis30.github.io/IntegraDraw/) · [Watch the demo](web/public/integradraw-demo.mp4) · [Desktop build](#desktop-application) · [Architecture](#architecture) · [Support](SUPPORT.md) · [Credits](#credits)
+[Live workbench](https://ejupi-djenis30.github.io/IntegraDraw/) · [Desktop build](#desktop-application) · [Architecture](#architecture) · [Support](SUPPORT.md) · [Credits](#credits)
 
 <br>
 
-<img src="web/public/poster.svg" alt="IntegraDraw poster showing a bell curve, midpoint rectangles and the numerical reference">
+<img src="web/public/social-preview.png" alt="IntegraDraw visual calculus workbench">
 </div>
 
 ## What it does
@@ -75,9 +75,7 @@ IntegraDraw/
 │   ├── src/math/              Dependency-free expression and integration core
 │   ├── src/plot.ts            Responsive Canvas renderer
 │   ├── src/main.ts            Workbench controller
-│   └── public/                Brand assets, poster and the 1280×720 demo
-├── scripts/render-demo.py     Reproducible video compositor
-├── docs/video-storyboard.md   Reproducible capture states for the demo video
+│   └── public/                Brand assets and social preview
 └── .github/workflows/         Java/web CI and Pages deployment
 ```
 
@@ -135,16 +133,6 @@ npm run check
 The release validator, deterministic ZIP writer, artifact parsers, inventory comparison and publication state machine are dependency-free Node.js modules covered by negative tests. The Maven wrapper pins Maven 3.9.16 and verifies the downloaded distribution checksum.
 
 No release tag is created by repository automation. Publication is currently fail-closed because the project has no agreed license: the workflow and publisher both require an explicit enablement plus a checked-in license. After the original contributors agree, a maintainer must review that change, update the changelog and deliberately push the matching tag.
-
-## Product demo
-
-The repository includes a 10-second, 1280×720 product demonstration built from real browser captures:
-
-- [`web/public/integradraw-demo.mp4`](web/public/integradraw-demo.mp4)
-- [`web/public/poster.svg`](web/public/poster.svg)
-- [`docs/video-storyboard.md`](docs/video-storyboard.md)
-
-It moves from the hero to an eight-segment approximation, shows convergence at 160 segments and closes with the responsive mobile controls and graph. The storyboard keeps the longer capture plan reproducible.
 
 ## Contributing and security
 
