@@ -6,7 +6,7 @@ Security fixes target the latest commit on the default branch. Earlier commits a
 
 ## Report a vulnerability
 
-Please use GitHub’s private vulnerability reporting from the repository’s **Security** tab. If that option is unavailable, email `djenis.ejupi@ejupilabs.com` with the subject `IntegraDraw security report`.
+Please use GitHub’s private vulnerability reporting from the repository’s **Security** tab. If that option is unavailable, email `info@ejupilabs.com` with the subject `IntegraDraw security report`.
 
 Include the affected component, reproduction steps, expected impact and any suggested mitigation. Do not open a public issue or attach personal, confidential or production data.
 
