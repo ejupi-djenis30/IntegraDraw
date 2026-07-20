@@ -13,6 +13,7 @@
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.build.outputTimestamp>2026-07-19T00:00:00Z</project.build.outputTimestamp>
         <junit.version>6.1.2</junit.version>
         <log4j.version>2.26.1</log4j.version>
         <matheclipse.version>3.2.0</matheclipse.version>
@@ -53,6 +54,14 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.5.0</version>
+                <configuration>
+                    <outputTimestamp>${project.build.outputTimestamp}</outputTimestamp>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -165,10 +174,10 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <version>[17,)</version>
+                                    <version>[17,18)</version>
                                 </requireJavaVersion>
                                 <requireMavenVersion>
-                                    <version>[3.9.0,)</version>
+                                    <version>[3.9.16,3.9.17)</version>
                                 </requireMavenVersion>
                             </rules>
                         </configuration>

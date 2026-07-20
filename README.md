@@ -58,7 +58,7 @@ It does not use `eval` or `Function`.
 Requirements: JDK 17+ and Maven 3.9+.
 
 ```bash
-mvn clean verify
+./mvnw clean verify
 java -jar target/integradraw-1.1.0.jar
 ```
 
@@ -99,25 +99,30 @@ Pull requests and pushes run:
 - release-metadata and static-site validation;
 - the production Pages build.
 
-Each successful Java run publishes a short-lived build artifact containing the executable JAR, SHA-256 checksums and a CycloneDX SBOM. Dependabot monitors Maven, npm and GitHub Actions dependencies each month.
+Each successful Java run publishes a short-lived build artifact containing the executable JAR and its CycloneDX SBOM. Release candidates add normalized SBOMs and the consolidated SHA-256 inventory described below. Dependabot monitors Maven, npm and GitHub Actions dependencies each month.
 
 ## Release process
 
-The release workflow runs the same candidate build on pull requests, manual dispatches and `v*` tag pushes. Pull requests and manual runs can inspect the complete output, but they cannot publish a release. A manual run can also supply an optional `v<version>` value to exercise the exact tag validator safely.
+The release workflow runs the same candidate builder on pull requests, manual dispatches and `v*` tag pushes. Pull requests and manual runs can inspect the complete output, but they cannot publish a release. A manual run can also supply an optional stable `v<version>` value to exercise the exact tag validator safely.
 
 Before a tag can publish, the workflow requires:
 
+- a stable `MAJOR.MINOR.PATCH` version with no prerelease or build suffix;
 - the version in `pom.xml` and `web/package.json` to match;
 - the npm lockfile to carry the same project version;
-- a dated heading for that version in `CHANGELOG.md`;
+- one visible, dated Markdown heading for that version in `CHANGELOG.md`;
 - a tag named exactly `v<version>`;
 - the tagged commit to belong to the default branch;
-- Java 17 tests, packaging and a real `java -jar … --version` smoke test;
+- pinned Temurin 17, Node.js and Maven toolchains;
+- Java tests, packaging, manifest inspection and a real `java -jar … --version` smoke test;
 - web typechecking, tests, validation and a production build;
-- Java and web CycloneDX SBOMs plus dependency inventories;
+- semantic ZIP, CycloneDX and dependency-graph validation;
+- normalized Java and web CycloneDX SBOMs plus dependency inventories;
 - one source-commit record and one consolidated, verified `SHA256SUMS` file.
 
-The tag-only job attests every checksummed asset through GitHub's artifact-attestation service. It then uploads the candidate to a draft GitHub Release, verifies every remote asset digest and makes the release public only after those checks pass. Existing releases are never overwritten.
+Two separate jobs then gate publication. The vulnerability job audits the npm lock and scans the checked-out source plus the exact candidate with Trivy. The reproducibility job starts from another clean checkout, rebuilds the JAR, static ZIP and normalized SBOMs, and compares the entire candidate byte for byte.
+
+Only a tag run that passes both gates can reach publication. The tag-only job attests every checksummed asset through GitHub's artifact-attestation service. A tested Node.js publisher uploads the candidate to a draft GitHub Release, verifies every remote name, size and digest, and makes the release public only after the inventory matches. Existing releases are never overwritten.
 
 Run the metadata and bundle-validator tests locally with:
 
@@ -126,6 +131,8 @@ cd web
 npm ci
 npm run check
 ```
+
+The release validator, deterministic ZIP writer, artifact parsers, inventory comparison and publication state machine are dependency-free Node.js modules covered by negative tests. The Maven wrapper pins Maven 3.9.16 and verifies the downloaded distribution checksum.
 
 No release tag is created by repository automation. A maintainer must review the candidate workflow, update the changelog and deliberately push the matching tag.
 

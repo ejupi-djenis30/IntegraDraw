@@ -4,13 +4,15 @@ Notable changes to IntegraDraw are recorded here.
 
 ## Unreleased
 
-- Added a tag-gated release pipeline that builds and verifies the desktop JAR and static web application before publication.
-- Added synchronized Java/web/tag version checks, executable-JAR smoke testing and deterministic release-bundle validation.
-- Added consolidated checksums, Java and web CycloneDX SBOMs, dependency evidence, source-commit records and tag-only GitHub attestations.
-- Documented the immutable draft-to-public release process without creating a tag or changing the repository's licensing status.
+- No unreleased changes.
 
 ## 1.1.0 — 2026-07-19
 
+- Added a tag-gated release pipeline with independent security and reproducibility gates before publication.
+- Added stable-only Java, web, lockfile, changelog and tag version validation.
+- Made the executable JAR, static web archive and normalized CycloneDX SBOMs reproducible across clean builds.
+- Added semantic artifact validation, dependency evidence, source-commit records, consolidated checksums and tag-only attestations.
+- Added draft-release inventory and digest verification before a release can become public.
 - Rebuilt the browser workbench in strict TypeScript with a dependency-free expression parser.
 - Corrected interval handling and aligned numerical limits across the Java and browser apps.
 - Added visible midpoint, trapezoidal and Simpson-reference comparisons.
