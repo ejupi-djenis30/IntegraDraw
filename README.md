@@ -5,7 +5,7 @@
 
 **A visual calculus workbench for comparing numerical integration methods.**
 
-[Live workbench](https://ejupi-djenis30.github.io/IntegraDraw/) · [Desktop build](#desktop-application) · [Architecture](#architecture) · [Support](SUPPORT.md) · [Credits](#credits)
+[Live workbench](https://ejupi-djenis30.github.io/IntegraDraw/) · [Desktop build](#desktop-application) · [Architecture](#architecture) · [MIT License](LICENSE) · [Support](SUPPORT.md) · [Credits](#credits)
 
 <br>
 
@@ -132,7 +132,7 @@ npm run check
 
 The release validator, deterministic ZIP writer, artifact parsers, inventory comparison and publication state machine are dependency-free Node.js modules covered by negative tests. The Maven wrapper pins Maven 3.9.16 and verifies the downloaded distribution checksum.
 
-No release tag is created by repository automation. Publication is currently fail-closed because the project has no agreed license: the workflow and publisher both require an explicit enablement plus a checked-in license. After the original contributors agree, a maintainer must review that change, update the changelog and deliberately push the matching tag.
+No release tag is created by repository automation. The original contributors approved the MIT License, so publication is enabled; the workflow still verifies the exact license text before it can publish. A maintainer must create a signed `v1.1.0` tag on the reviewed default-branch commit to start the trusted release path.
 
 ## Contributing and security
 
@@ -149,4 +149,4 @@ IntegraDraw started as a collaborative school project in 2023.
 
 The original Git history and the legacy IntelliJ `.form` file remain in the repository so earlier work stays attributable. The current runtime no longer depends on that file.
 
-No license has been added during this modernization. Reuse rights must be agreed with the original contributors before a license is selected.
+IntegraDraw is available under the [MIT License](LICENSE). Copyright remains with Djenis Ejupi and `project contributors`.

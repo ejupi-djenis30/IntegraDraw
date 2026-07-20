@@ -24,7 +24,8 @@ env:
   JAVA_VERSION: "17.0.19+10"
   GH_CLI_VERSION: "2.94.0"
   GH_CLI_SHA256: "a757f1ba6db18f4de8cbadb244843a5f89bc75b5e7c6fc127d2bd77fbd12ed62"
-  RELEASE_PUBLICATION_ENABLED: "false"
+  MIT_LICENSE_SHA256: "ae2531d1e1568f847f7c73a3d084f80a4bc7487db56d3e8e0cbaef28f01c1d0b"
+  RELEASE_PUBLICATION_ENABLED: "true"
 
 jobs:
   build:
@@ -237,13 +238,10 @@ jobs:
         run: |
           set -euo pipefail
           [[ "${RELEASE_PUBLICATION_ENABLED}" == "true" ]] || {
-            echo "Release publication remains disabled until the maintainers approve and add a project license." >&2
+            echo "Release publication is not authorized." >&2
             exit 1
           }
-          compgen -G 'LICENSE*' > /dev/null || {
-            echo "Release publication requires a checked-in LICENSE file." >&2
-            exit 1
-          }
+          printf '%s  %s\n' "${MIT_LICENSE_SHA256}" LICENSE | sha256sum --check --strict
 
       - name: Install checksummed GitHub CLI
         shell: bash

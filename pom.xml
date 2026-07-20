@@ -10,6 +10,14 @@
     <name>IntegraDraw</name>
     <description>A visual workbench for definite integrals and numerical approximation.</description>
 
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://spdx.org/licenses/MIT.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
     <properties>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -66,6 +74,16 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>${project.basedir}</directory>
+                <includes>
+                    <include>LICENSE</include>
+                </includes>
+                <targetPath>META-INF/licenses/com.planck/integradraw</targetPath>
+                <filtering>false</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -149,6 +167,8 @@
                                     <manifestEntries>
                                         <Implementation-Title>${project.name}</Implementation-Title>
                                         <Implementation-Version>${project.version}</Implementation-Version>
+                                        <Project-License>MIT</Project-License>
+                                        <Project-License-File>META-INF/licenses/com.planck/integradraw/LICENSE</Project-License-File>
                                     </manifestEntries>
                                 </transformer>
                             </transformers>

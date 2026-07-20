@@ -24,6 +24,7 @@ import {
   publishRelease,
   readZipEntriesFromBuffer,
   repositoryRoot,
+  mitLicenseSha256,
   validateCycloneDx,
   validateDependencyEvidenceAgainstSbom,
   validateExecutableJar,
@@ -36,11 +37,13 @@ import {
 const version = "1.1.0";
 const releaseDate = "2026-07-19";
 const sourceCommit = "0123456789abcdef0123456789abcdef01234567";
+const licenseText = await readFile(join(repositoryRoot, "LICENSE"), "utf8");
 const metadata = {
   version,
   releaseDate,
   outputTimestamp: `${releaseDate}T00:00:00Z`,
   sourceDateEpoch: Math.floor(Date.parse(`${releaseDate}T00:00:00Z`) / 1000),
+  license: { spdx: "MIT", sha256: mitLicenseSha256 },
 };
 const temporaryDirectories = [];
 
@@ -71,11 +74,13 @@ function changelog(releaseVersion = version, date = releaseDate) {
 }
 
 function versionFixture(overrides = {}) {
+  const pomLicense = "<licenses><license><name>MIT License</name><url>https://spdx.org/licenses/MIT.html</url><distribution>repo</distribution></license></licenses>";
   return {
-    pom: `<project><groupId>com.planck</groupId><artifactId>integradraw</artifactId><version>${version}</version><properties><project.build.outputTimestamp>${releaseDate}T00:00:00Z</project.build.outputTimestamp></properties></project>`,
-    packageJson: JSON.stringify({ name: "integradraw-web", version }),
-    packageLockJson: JSON.stringify({ version, packages: { "": { version } } }),
+    pom: `<project><groupId>com.planck</groupId><artifactId>integradraw</artifactId><version>${version}</version>${pomLicense}<properties><project.build.outputTimestamp>${releaseDate}T00:00:00Z</project.build.outputTimestamp></properties></project>`,
+    packageJson: JSON.stringify({ name: "integradraw-web", version, license: "MIT" }),
+    packageLockJson: JSON.stringify({ version, packages: { "": { version, license: "MIT" } } }),
     changelog: changelog(),
+    licenseText,
     ...overrides,
   };
 }
@@ -89,12 +94,14 @@ function minimalBom(platform, dependencyRef = `${platform}:dependency`) {
           group: "com.planck",
           name: "integradraw",
           version,
+          licenses: [{ license: { id: "MIT" } }],
         }
       : {
           "bom-ref": `integradraw-web@${version}`,
           type: "application",
           name: "integradraw-web",
           version,
+          licenses: [{ license: { id: "MIT" } }],
         };
   const dependency = {
     "bom-ref": dependencyRef,
@@ -122,8 +129,9 @@ async function createJar(root, manifest = undefined) {
     input,
     "META-INF/MANIFEST.MF",
     manifest ??
-      `Manifest-Version: 1.0\r\nMain-Class: com.planck.Main\r\nImplementation-Title: IntegraDraw\r\nImplementation-Version: ${version}\r\n\r\n`,
+      `Manifest-Version: 1.0\r\nMain-Class: com.planck.Main\r\nImplementation-Title: IntegraDraw\r\nImplementation-Version: ${version}\r\nProject-License: MIT\r\nProject-License-File: META-INF/licenses/com.planck/integradraw/LICENSE\r\n\r\n`,
   );
+  await writeFixture(input, "META-INF/licenses/com.planck/integradraw/LICENSE", licenseText);
   await writeFixture(input, "com/planck/Main.class", Buffer.from([0xca, 0xfe, 0xba, 0xbe]));
   const output = join(root, `integradraw-${version}.jar`);
   await createDeterministicZip({ inputDirectory: input, outputFile: output, releaseDate });
@@ -138,13 +146,14 @@ async function createWebArchive(root) {
     '<script type="module" src="/IntegraDraw/assets/app.js"></script><link rel="stylesheet" href="/IntegraDraw/assets/app.css">',
   );
   for (const file of [
+    "LICENSE",
     "brand-mark.svg",
     "favicon.svg",
     "social-preview.png",
     "assets/app.js",
     "assets/app.css",
   ]) {
-    await writeFixture(input, file, Buffer.from(`fixture:${file}`));
+    await writeFixture(input, file, file === "LICENSE" ? licenseText : Buffer.from(`fixture:${file}`));
   }
   const output = join(root, `integradraw-web-${version}.zip`);
   await createDeterministicZip({ inputDirectory: input, outputFile: output, releaseDate });
@@ -153,6 +162,7 @@ async function createWebArchive(root) {
 
 async function createBundle() {
   const root = await temporaryDirectory();
+  await writeFixture(root, "LICENSE", licenseText);
   const jar = await createJar(root);
   const { output: webArchive } = await createWebArchive(root);
   const projectJar = await writeFixture(root, `target/integradraw-${version}.jar`, await readFile(jar));
@@ -370,9 +380,9 @@ describe("release metadata", () => {
       expect(() =>
         validateVersionTexts({
           ...versionFixture(),
-          pom: `<project><groupId>com.planck</groupId><artifactId>integradraw</artifactId><version>${unstable}</version><properties><project.build.outputTimestamp>${releaseDate}T00:00:00Z</project.build.outputTimestamp></properties></project>`,
-          packageJson: JSON.stringify({ name: "integradraw-web", version: unstable }),
-          packageLockJson: JSON.stringify({ version: unstable, packages: { "": { version: unstable } } }),
+          pom: versionFixture().pom.replaceAll(version, unstable),
+          packageJson: JSON.stringify({ name: "integradraw-web", version: unstable, license: "MIT" }),
+          packageLockJson: JSON.stringify({ version: unstable, packages: { "": { version: unstable, license: "MIT" } } }),
           changelog: changelog(unstable),
         }),
       ).toThrow("stable MAJOR.MINOR.PATCH");
@@ -400,9 +410,21 @@ describe("release metadata", () => {
 
   it("rejects version and tag drift", () => {
     expect(() =>
-      validateVersionTexts({ ...versionFixture(), packageJson: JSON.stringify({ name: "integradraw-web", version: "1.1.1" }) }),
+      validateVersionTexts({ ...versionFixture(), packageJson: JSON.stringify({ name: "integradraw-web", version: "1.1.1", license: "MIT" }) }),
     ).toThrow("same version");
     expect(() => validateVersionTexts({ ...versionFixture(), tag: "v1.1.1" })).toThrow("exactly v1.1.0");
+  });
+
+  it("rejects license text and SPDX metadata drift", () => {
+    expect(() => validateVersionTexts({ ...versionFixture(), licenseText: `${licenseText} ` })).toThrow(
+      "canonical MIT License",
+    );
+    expect(() =>
+      validateVersionTexts({
+        ...versionFixture(),
+        packageJson: JSON.stringify({ name: "integradraw-web", version, license: "UNLICENSED" }),
+      }),
+    ).toThrow("MIT SPDX identifier");
   });
 
   it("ignores valid POM comments and rejects malformed comment markers", () => {
@@ -422,10 +444,12 @@ describe("release metadata", () => {
 });
 
 describe("release workflow contract", () => {
-  it("keeps publication gated, attested, reproducible, and fail-closed without a license", async () => {
+  it("keeps publication license-bound, attested, and reproducible", async () => {
     const workflow = await readFile(join(repositoryRoot, ".github", "workflows", "release.yml"), "utf8");
     expect(workflow).not.toContain("ubuntu-latest");
-    expect(workflow).toContain('RELEASE_PUBLICATION_ENABLED: "false"');
+    expect(workflow).toContain('RELEASE_PUBLICATION_ENABLED: "true"');
+    expect(workflow).toContain(`MIT_LICENSE_SHA256: "${mitLicenseSha256}"`);
+    expect(workflow).toContain("sha256sum --check --strict");
     expect(workflow).toContain("Build and verify release candidate");
     expect(workflow).toContain("Candidate vulnerability gate");
     expect(workflow).toContain("Independent reproducibility gate");
@@ -611,9 +635,14 @@ describe("bundle inventory and publication", () => {
   it("validates a complete semantic bundle and detects byte drift", async () => {
     const { output } = await createBundle();
     await expect(validateReleaseBundle({ directory: output, metadata, sourceCommit })).resolves.toBeUndefined();
+    await expect(readFile(join(output, "LICENSE"), "utf8")).resolves.toBe(licenseText);
+    await expect(readFile(join(output, "release-metadata.json"), "utf8").then(JSON.parse)).resolves.toMatchObject({
+      schemaVersion: 3,
+      license: { spdx: "MIT", sha256: mitLicenseSha256, file: "LICENSE" },
+    });
     const copy = await temporaryDirectory("integradraw-copy-");
     await cp(output, copy, { recursive: true });
-    await expect(compareReleaseBundles(output, copy)).resolves.toHaveLength(9);
+    await expect(compareReleaseBundles(output, copy)).resolves.toHaveLength(10);
     await writeFile(join(copy, "SOURCE_COMMIT"), `${"f".repeat(40)}\n`);
     await expect(compareReleaseBundles(output, copy)).rejects.toThrow("bit-for-bit identical");
   });
@@ -735,7 +764,7 @@ describe("bundle inventory and publication", () => {
   it("requires the explicit license and trusted tag-event gates", async () => {
     const { output } = await createBundle();
     const api = new FakeGitHubReleaseApi(await buildFileInventory(output));
-    await expect(publishWithFake(output, api, { publicationAuthorized: false })).rejects.toThrow("approved license");
+    await expect(publishWithFake(output, api, { publicationAuthorized: false })).rejects.toThrow("approved MIT License");
     await expect(publishWithFake(output, api, { eventName: "workflow_dispatch" })).rejects.toThrow("tag-push event");
     expect(api.calls).toHaveLength(0);
   });
