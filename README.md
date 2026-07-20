@@ -5,7 +5,7 @@
 
 **A visual calculus workbench for comparing numerical integration methods.**
 
-[Live workbench](https://ejupi-djenis30.github.io/IntegraDraw/) · [Watch the demo](web/public/integradraw-demo.mp4) · [Desktop build](#desktop-application) · [Architecture](#architecture) · [Credits](#credits)
+[Live workbench](https://ejupi-djenis30.github.io/IntegraDraw/) · [Watch the demo](web/public/integradraw-demo.mp4) · [Desktop build](#desktop-application) · [Architecture](#architecture) · [Support](SUPPORT.md) · [Credits](#credits)
 
 <br>
 
