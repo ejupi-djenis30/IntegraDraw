@@ -263,6 +263,21 @@ describe("release metadata", () => {
     ).toThrow("same version");
     expect(() => validateVersionTexts({ ...versionFixture(), tag: "v1.1.1" })).toThrow("exactly v1.1.0");
   });
+
+  it("ignores valid POM comments and rejects malformed comment markers", () => {
+    const fixture = versionFixture();
+    const commentedPom = fixture.pom.replace(
+      "<project>",
+      "<project><!-- <groupId>com.planck</groupId><artifactId>integradraw</artifactId><version>9.9.9</version> -->",
+    );
+    expect(validateVersionTexts({ ...fixture, pom: commentedPom })).toMatchObject({ version });
+
+    for (const marker of ["<!-- outer <!-- nested -->", "<!-- unclosed", "stray -->"]) {
+      expect(() =>
+        validateVersionTexts({ ...fixture, pom: fixture.pom.replace("<project>", `<project>${marker}`) }),
+      ).toThrow(/XML comment|comment terminator/);
+    }
+  });
 });
 
 describe("archive semantics and reproducibility", () => {

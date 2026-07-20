@@ -45,7 +45,27 @@ function assertPlainObject(value, label) {
 }
 
 function stripXmlComments(xml) {
-  return xml.replace(/<!--[\s\S]*?-->/g, "");
+  let cursor = 0;
+  let visible = "";
+
+  while (cursor < xml.length) {
+    const start = xml.indexOf("<!--", cursor);
+    const strayEnd = xml.indexOf("-->", cursor);
+    assert.ok(
+      strayEnd === -1 || (start !== -1 && start < strayEnd),
+      "pom.xml contains an XML comment terminator without an opening marker.",
+    );
+    if (start === -1) return visible + xml.slice(cursor);
+
+    visible += xml.slice(cursor, start);
+    const end = xml.indexOf("-->", start + 4);
+    assert.notEqual(end, -1, "pom.xml contains an unclosed XML comment.");
+    const body = xml.slice(start + 4, end);
+    assert.equal(body.includes("--"), false, "pom.xml contains an invalid nested XML comment marker.");
+    cursor = end + 3;
+  }
+
+  return visible;
 }
 
 function projectMetadataFromPom(pom) {
