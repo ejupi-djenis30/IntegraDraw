@@ -1,0 +1,312 @@
+name: Release readiness
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      expected_tag:
+        description: Optional stable v<version> value to exercise tag validation without publishing
+        required: false
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.ref_type == 'tag' && 'tags' || github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "24.18.0"
+  JAVA_VERSION: "17.0.19+10"
+  GH_CLI_VERSION: "2.94.0"
+  GH_CLI_SHA256: "a757f1ba6db18f4de8cbadb244843a5f89bc75b5e7c6fc127d2bd77fbd12ed62"
+  RELEASE_PUBLICATION_ENABLED: "false"
+
+jobs:
+  build:
+    name: Build and verify release candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      version: ${{ steps.candidate.outputs.version }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up pinned Java
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Set up pinned Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build release candidate
+        id: candidate
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          EXPECTED_TAG: ${{ inputs.expected_tag || '' }}
+          DEFAULT_BRANCH_REF: refs/remotes/origin/${{ github.event.repository.default_branch }}
+        run: >-
+          node web/scripts/release-cli.mjs build
+          --output release
+          --commit "${GITHUB_SHA}"
+          --tag "${RELEASE_TAG}"
+          --expected-tag "${EXPECTED_TAG}"
+          --default-branch "${DEFAULT_BRANCH_REF}"
+          --github-output "${GITHUB_OUTPUT}"
+
+      - name: Upload verified release candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: integradraw-release-candidate
+          path: release
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+  security:
+    name: Candidate vulnerability gate
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Set up pinned Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Download exact release candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: integradraw-release-candidate
+          path: release
+
+      - name: Revalidate downloaded candidate
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: >-
+          node web/scripts/release-cli.mjs verify
+          --directory release
+          --commit "${GITHUB_SHA}"
+          --tag "${RELEASE_TAG}"
+
+      - name: Audit npm dependency lock
+        working-directory: web
+        run: npm audit --audit-level=high
+
+      - name: Scan source dependency manifests with Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
+          vuln-type: library
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: MEDIUM,HIGH,CRITICAL
+
+      - name: Scan exact Java candidate SBOM with Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: sbom
+          scan-ref: release/integradraw-java-${{ needs.build.outputs.version }}.cdx.json
+          scanners: vuln
+          vuln-type: library
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: MEDIUM,HIGH,CRITICAL
+
+      - name: Scan exact web candidate SBOM with Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: sbom
+          scan-ref: release/integradraw-web-${{ needs.build.outputs.version }}.cdx.json
+          scanners: vuln
+          vuln-type: library
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: MEDIUM,HIGH,CRITICAL
+
+  reproducibility:
+    name: Independent reproducibility gate
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up pinned Java
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Set up pinned Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Download first independent build
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: integradraw-release-candidate
+          path: expected-release
+
+      - name: Build candidate again from clean checkout
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          EXPECTED_TAG: ${{ inputs.expected_tag || '' }}
+          DEFAULT_BRANCH_REF: refs/remotes/origin/${{ github.event.repository.default_branch }}
+        run: >-
+          node web/scripts/release-cli.mjs build
+          --output rebuilt-release
+          --commit "${GITHUB_SHA}"
+          --tag "${RELEASE_TAG}"
+          --expected-tag "${EXPECTED_TAG}"
+          --default-branch "${DEFAULT_BRANCH_REF}"
+
+      - name: Compare independent builds byte for byte
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: >-
+          node web/scripts/release-cli.mjs compare
+          --directory expected-release
+          --other-directory rebuilt-release
+          --commit "${GITHUB_SHA}"
+          --tag "${RELEASE_TAG}"
+
+  publish:
+    name: Attest and publish tagged release
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs:
+      - build
+      - security
+      - reproducibility
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up pinned Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Enforce release authorization gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${RELEASE_PUBLICATION_ENABLED}" == "true" ]] || {
+            echo "Release publication remains disabled until the maintainers approve and add a project license." >&2
+            exit 1
+          }
+          compgen -G 'LICENSE*' > /dev/null || {
+            echo "Release publication requires a checked-in LICENSE file." >&2
+            exit 1
+          }
+
+      - name: Install checksummed GitHub CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="gh_${GH_CLI_VERSION}_linux_amd64.tar.gz"
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            --output "${RUNNER_TEMP}/${archive}" \
+            "https://github.com/cli/cli/releases/download/v${GH_CLI_VERSION}/${archive}"
+          printf '%s  %s\n' "${GH_CLI_SHA256}" "${RUNNER_TEMP}/${archive}" | sha256sum --check --strict
+          tar --extract --gzip --file "${RUNNER_TEMP}/${archive}" --directory "${RUNNER_TEMP}"
+          gh_directory="${RUNNER_TEMP}/gh_${GH_CLI_VERSION}_linux_amd64/bin"
+          [[ "$("${gh_directory}/gh" --version | head -n 1)" == "gh version ${GH_CLI_VERSION} (2026-06-10)" ]]
+          printf '%s\n' "${gh_directory}" >> "${GITHUB_PATH}"
+
+      - name: Download gated release candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: integradraw-release-candidate
+          path: release
+
+      - name: Revalidate tag and candidate
+        run: >-
+          node web/scripts/release-cli.mjs verify
+          --directory release
+          --commit "${GITHUB_SHA}"
+          --tag "${GITHUB_REF_NAME}"
+
+      - name: Attest checksummed release assets
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
+        with:
+          subject-checksums: release/SHA256SUMS
+
+      - name: Attest checksum manifest
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
+        with:
+          subject-path: release/SHA256SUMS
+
+      - name: Verify release provenance before publication
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mapfile -d '' assets < <(find release -maxdepth 1 -type f -print0 | sort -z)
+          (( ${#assets[@]} > 0 ))
+          for asset in "${assets[@]}"; do
+            gh attestation verify "${asset}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/release.yml" \
+              --source-digest "${GITHUB_SHA}" \
+              --source-ref "${GITHUB_REF}" \
+              --predicate-type "https://slsa.dev/provenance/v1" \
+              --cert-oidc-issuer "https://token.actions.githubusercontent.com" \
+              --deny-self-hosted-runners
+          done
+
+      - name: Recover, verify, and publish the immutable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          node web/scripts/release-cli.mjs publish
+          --directory release
+          --commit "${GITHUB_SHA}"
+          --tag "${GITHUB_REF_NAME}"
+          --repository "${GITHUB_REPOSITORY}"

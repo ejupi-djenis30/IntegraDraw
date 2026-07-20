@@ -11,7 +11,8 @@ permissions:
 jobs:
   java:
     name: Java 17
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -21,26 +22,30 @@ jobs:
         uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "17.0.19+10"
           cache: maven
+      - name: Set up Node.js for artifact validation
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24.18.0"
       - name: Test and package desktop app
-        run: mvn --batch-mode --no-transfer-progress verify
-      - name: Create SHA-256 checksum
-        run: sha256sum target/integradraw-1.1.0.jar target/bom.json > target/SHA256SUMS
+        run: ./mvnw --batch-mode --no-transfer-progress verify
+      - name: Inspect manifest and smoke-test executable JAR
+        run: node web/scripts/release-cli.mjs desktop
       - name: Upload desktop build
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: integradraw-desktop
           path: |
-            target/integradraw-1.1.0.jar
+            target/integradraw-*.jar
             target/bom.json
-            target/SHA256SUMS
           if-no-files-found: error
           retention-days: 14
 
   web:
     name: Web app
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: web
@@ -52,7 +57,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "22"
+          node-version: "24.18.0"
           cache: npm
           cache-dependency-path: web/package-lock.json
       - name: Install dependencies
