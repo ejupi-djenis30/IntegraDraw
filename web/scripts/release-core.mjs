@@ -246,7 +246,13 @@ export function crc32(bytes) {
 }
 
 function archivePathIsSafe(name) {
-  if (name === "" || name.includes("\\") || name.includes("\0") || name.startsWith("/")) return false;
+  if (
+    name === ""
+    || name.includes("\\")
+    || name.includes("\0")
+    || name.startsWith("/")
+    || /^[A-Za-z]:/.test(name)
+  ) return false;
   const segments = name.split("/");
   if (segments.at(-1) === "") segments.pop();
   return segments.length > 0 && segments.every((segment) => segment !== "" && segment !== "." && segment !== "..");
@@ -1388,7 +1394,7 @@ export async function publishRelease({
 
   if (release) {
     validateDraftRelease(release, contract);
-    requireRemoteTag(runProcess, repository, tag, sourceCommit, "draft recovery");
+    requireRemoteSourceBinding(runProcess, repository, tag, sourceCommit);
   } else {
     requireRemoteSourceBinding(runProcess, repository, tag, sourceCommit);
     release = createDraftRelease(runProcess, repository, contract);

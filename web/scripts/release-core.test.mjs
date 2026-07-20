@@ -214,6 +214,14 @@ function failedResult(message) {
   return { status: 1, stdout: "", stderr: message };
 }
 
+function mutationCalls(api) {
+  return api.calls.filter((call) => {
+    if (call[1] === "release") return true;
+    const methodIndex = call.indexOf("--method");
+    return methodIndex !== -1 && ["POST", "PATCH", "DELETE"].includes(call[methodIndex + 1]);
+  });
+}
+
 function requestField(args, name) {
   const value = args.find((argument) => typeof argument === "string" && argument.startsWith(`${name}=`));
   return value?.slice(name.length + 1);
@@ -442,6 +450,22 @@ describe("release workflow contract", () => {
     expect(workflow).toContain("web/scripts/release-cli.mjs publish");
     expect(workflow).not.toContain("--generate-notes");
   });
+
+  it("grants each Pages job only the permissions it needs", async () => {
+    const workflow = await readFile(join(repositoryRoot, ".github", "workflows", "pages.yml"), "utf8");
+    const buildStart = workflow.indexOf("  build:\n");
+    const deployStart = workflow.indexOf("  deploy:\n");
+    expect(buildStart).toBeGreaterThan(-1);
+    expect(deployStart).toBeGreaterThan(buildStart);
+
+    const build = workflow.slice(buildStart, deployStart);
+    const deploy = workflow.slice(deployStart);
+    expect(workflow).toMatch(/^permissions: \{\}$/mu);
+    expect(build).toMatch(/^    permissions:\n      contents: read$/mu);
+    expect(build).not.toMatch(/^      (?:pages|id-token):/mu);
+    expect(deploy).toMatch(/^    permissions:\n      pages: write\n      id-token: write$/mu);
+    expect(deploy).not.toMatch(/^      contents:/mu);
+  });
 });
 
 describe("archive semantics and reproducibility", () => {
@@ -478,13 +502,17 @@ describe("archive semantics and reproducibility", () => {
     await writeFixture(unsafeInput, "safe", "payload");
     const unsafeZip = join(unsafeRoot, "unsafe.zip");
     await createDeterministicZip({ inputDirectory: unsafeInput, outputFile: unsafeZip, releaseDate });
-    const unsafeBytes = await readFile(unsafeZip);
-    let occurrence = unsafeBytes.indexOf(Buffer.from("safe"));
-    while (occurrence !== -1) {
-      Buffer.from("../x").copy(unsafeBytes, occurrence);
-      occurrence = unsafeBytes.indexOf(Buffer.from("safe"), occurrence + 4);
+    for (const unsafeName of ["../x", "C:/x", "C:xx"]) {
+      const unsafeBytes = await readFile(unsafeZip);
+      let occurrence = unsafeBytes.indexOf(Buffer.from("safe"));
+      while (occurrence !== -1) {
+        Buffer.from(unsafeName).copy(unsafeBytes, occurrence);
+        occurrence = unsafeBytes.indexOf(Buffer.from("safe"), occurrence + 4);
+      }
+      expect(() => readZipEntriesFromBuffer(unsafeBytes, `unsafe ${unsafeName} fixture`)).toThrow(
+        "unsafe entry path",
+      );
     }
-    expect(() => readZipEntriesFromBuffer(unsafeBytes, "unsafe fixture")).toThrow("unsafe entry path");
 
     const corruptRoot = await temporaryDirectory();
     const corruptInput = join(corruptRoot, "input");
@@ -636,6 +664,22 @@ describe("bundle inventory and publication", () => {
     expect(createCalls()).toHaveLength(1);
     expect(api.calls.some((call) => call[2]?.endsWith("page=2"))).toBe(true);
     expect(api.calls.some((call) => call.includes("DELETE"))).toBe(true);
+  });
+
+  it("does not mutate a recoverable draft when its source leaves the default branch", async () => {
+    const { output } = await createBundle();
+    const api = new FakeGitHubReleaseApi(await buildFileInventory(output), { failUpload: true });
+    await expect(publishWithFake(output, api)).rejects.toThrow("upload interrupted");
+    expect(api.release.assets).toHaveLength(1);
+
+    api.failUpload = false;
+    api.defaultCommit = "f".repeat(40);
+    api.contained = false;
+    const mutationsBeforeRecovery = mutationCalls(api).length;
+    await expect(publishWithFake(output, api)).rejects.toThrow("not contained");
+    expect(mutationCalls(api)).toHaveLength(mutationsBeforeRecovery);
+    expect(api.release.assets).toHaveLength(1);
+    expect(api.release.draft).toBe(true);
   });
 
   it("is idempotent for the exact immutable published release", async () => {
