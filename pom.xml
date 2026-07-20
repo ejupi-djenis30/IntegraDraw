@@ -14,11 +14,24 @@
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.build.outputTimestamp>2026-07-19T00:00:00Z</project.build.outputTimestamp>
+        <jackson.version>2.21.4</jackson.version>
         <junit.version>6.1.2</junit.version>
         <log4j.version>2.26.1</log4j.version>
         <matheclipse.version>3.2.0</matheclipse.version>
         <slf4j.version>1.7.36</slf4j.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>

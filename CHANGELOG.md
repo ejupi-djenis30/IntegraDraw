@@ -13,6 +13,7 @@ Notable changes to IntegraDraw are recorded here.
 - Made the executable JAR, static web archive and normalized CycloneDX SBOMs reproducible across clean builds.
 - Added semantic artifact validation, dependency evidence, source-commit records, consolidated checksums and tag-only attestations.
 - Added draft-release inventory and digest verification before a release can become public.
+- Upgraded the transitive Jackson stack to 2.21.4 to resolve CVE-2026-54512 and CVE-2026-54513.
 - Rebuilt the browser workbench in strict TypeScript with a dependency-free expression parser.
 - Corrected interval handling and aligned numerical limits across the Java and browser apps.
 - Added visible midpoint, trapezoidal and Simpson-reference comparisons.
