@@ -9,11 +9,26 @@ import java.awt.Color;
 import java.awt.Dimension;
 
 public final class Main {
+    private static final String PRODUCT_NAME = "IntegraDraw";
+
     private Main() {
     }
 
     public static void main(String[] args) {
+        if (args.length == 1 && "--version".equals(args[0])) {
+            System.out.println(versionText());
+            return;
+        }
+
         SwingUtilities.invokeLater(Main::showApplication);
+    }
+
+    static String versionText() {
+        String implementationVersion = Main.class.getPackage().getImplementationVersion();
+        String version = implementationVersion == null || implementationVersion.isBlank()
+                ? "development"
+                : implementationVersion;
+        return PRODUCT_NAME + " " + version;
     }
 
     private static void showApplication() {

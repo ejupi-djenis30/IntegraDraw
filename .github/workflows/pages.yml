@@ -5,10 +5,7 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+permissions: {}
 
 concurrency:
   group: pages
@@ -16,7 +13,10 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: web
@@ -28,7 +28,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "22"
+          node-version: "24.18.0"
           cache: npm
           cache-dependency-path: web/package-lock.json
       - name: Install dependencies
@@ -45,10 +45,14 @@ jobs:
           path: web/dist
 
   deploy:
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     needs: build
     steps:
       - name: Deploy to GitHub Pages
