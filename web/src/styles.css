@@ -26,7 +26,7 @@ html {
 
 body {
   margin: 0;
-  min-width: 320px;
+  min-width: 0;
   color: var(--ink);
   background:
     linear-gradient(to right, var(--grid) 1px, transparent 1px),
