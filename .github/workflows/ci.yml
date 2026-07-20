@@ -25,14 +25,31 @@ jobs:
           cache: maven
       - name: Test and package desktop app
         run: mvn --batch-mode --no-transfer-progress verify
+      - name: Read project version
+        id: metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(mvn --batch-mode --no-transfer-progress help:evaluate -Dexpression=project.version -q -DforceStdout)"
+          printf 'version=%s\n' "${version}" >> "${GITHUB_OUTPUT}"
+      - name: Smoke-test executable JAR
+        shell: bash
+        env:
+          VERSION: ${{ steps.metadata.outputs.version }}
+        run: |
+          set -euo pipefail
+          [[ "$(java -Djava.awt.headless=true -jar "target/integradraw-${VERSION}.jar" --version)" == "IntegraDraw ${VERSION}" ]]
       - name: Create SHA-256 checksum
-        run: sha256sum target/integradraw-1.1.0.jar target/bom.json > target/SHA256SUMS
+        shell: bash
+        env:
+          VERSION: ${{ steps.metadata.outputs.version }}
+        run: sha256sum "target/integradraw-${VERSION}.jar" target/bom.json > target/SHA256SUMS
       - name: Upload desktop build
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: integradraw-desktop
           path: |
-            target/integradraw-1.1.0.jar
+            target/integradraw-${{ steps.metadata.outputs.version }}.jar
             target/bom.json
             target/SHA256SUMS
           if-no-files-found: error

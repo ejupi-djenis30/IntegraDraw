@@ -1,0 +1,204 @@
+name: Release readiness
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      expected_tag:
+        description: Optional v<version> value to exercise tag validation without publishing
+        required: false
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and verify release candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Java 17
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Validate synchronized release metadata
+        id: metadata
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EXPECTED_TAG: ${{ inputs.expected_tag }}
+        run: |
+          set -euo pipefail
+          arguments=()
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            [[ "$(git rev-parse "${GITHUB_REF_NAME}^{commit}")" == "$(git rev-parse HEAD)" ]]
+            git merge-base --is-ancestor HEAD "refs/remotes/origin/${DEFAULT_BRANCH}"
+            arguments+=(--tag "${GITHUB_REF_NAME}")
+          elif [[ -n "${EXPECTED_TAG}" ]]; then
+            arguments+=(--tag "${EXPECTED_TAG}")
+          fi
+          version="$(node web/scripts/validate-release.mjs "${arguments[@]}")"
+          printf 'version=%s\n' "${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Test and package desktop application
+        run: mvn --batch-mode --no-transfer-progress clean verify
+
+      - name: Smoke-test executable JAR
+        shell: bash
+        env:
+          VERSION: ${{ steps.metadata.outputs.version }}
+        run: |
+          set -euo pipefail
+          jar_path="target/integradraw-${VERSION}.jar"
+          [[ -f "${jar_path}" ]]
+          [[ "$(java -Djava.awt.headless=true -jar "${jar_path}" --version)" == "IntegraDraw ${VERSION}" ]]
+
+      - name: Capture Java dependency evidence
+        run: >-
+          mvn --batch-mode --no-transfer-progress dependency:tree
+          -Dscope=runtime
+          -DoutputType=text
+          -DoutputFile=target/java-dependencies.txt
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Typecheck, test, and validate web application
+        working-directory: web
+        run: npm run check
+
+      - name: Build static Pages application
+        working-directory: web
+        run: npm run build
+
+      - name: Capture web SBOM and dependency evidence
+        working-directory: web
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p target
+          npm sbom --sbom-format cyclonedx > target/sbom.cdx.json
+          npm ls --all --json > target/npm-dependencies.json
+
+      - name: Assemble and validate release bundle
+        shell: bash
+        env:
+          VERSION: ${{ steps.metadata.outputs.version }}
+        run: |
+          set -euo pipefail
+          web_archive="target/integradraw-web-${VERSION}.zip"
+          jar --create --no-manifest --file "${web_archive}" -C web/dist .
+          node web/scripts/validate-release.mjs \
+            --assemble release \
+            --commit "$(git rev-parse HEAD)" \
+            --web-archive "${web_archive}"
+          (cd release && sha256sum --check SHA256SUMS)
+
+      - name: Upload verified release candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: integradraw-release-candidate
+          path: release
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+  publish:
+    name: Attest and publish tagged release
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download verified release candidate
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: integradraw-release-candidate
+          path: release
+
+      - name: Reverify tag, source, and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${GITHUB_REF_NAME}" == "v$(jq -r '.version' web/package.json)" ]]
+          source_commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
+          [[ "$(cat release/SOURCE_COMMIT)" == "${source_commit}" ]]
+          (cd release && sha256sum --check SHA256SUMS)
+
+      - name: Attest release assets
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
+        with:
+          subject-checksums: release/SHA256SUMS
+
+      - name: Stage, verify, and publish GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+
+          if gh release view "${tag}" >/dev/null 2>&1; then
+            echo "A release for ${tag} already exists; releases are immutable." >&2
+            exit 1
+          fi
+
+          mapfile -t assets < <(find release -maxdepth 1 -type f -print | sort)
+          gh release create "${tag}" "${assets[@]}" \
+            --draft \
+            --verify-tag \
+            --title "IntegraDraw ${version}" \
+            --generate-notes
+
+          mapfile -t expected_names < <(printf '%s\n' "${assets[@]#release/}" | sort)
+          mapfile -t published_names < <(gh release view "${tag}" --json assets --jq '.assets[].name' | sort)
+          diff -u <(printf '%s\n' "${expected_names[@]}") <(printf '%s\n' "${published_names[@]}")
+
+          for asset in "${assets[@]}"; do
+            name="${asset#release/}"
+            expected_digest="sha256:$(sha256sum "${asset}" | cut -d ' ' -f 1)"
+            published_digest="$(
+              gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}" \
+                --jq ".assets[] | select(.name == \"${name}\") | .digest"
+            )"
+            [[ "${published_digest}" == "${expected_digest}" ]]
+          done
+
+          gh release edit "${tag}" --draft=false

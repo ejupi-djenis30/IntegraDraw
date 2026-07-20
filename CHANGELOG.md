@@ -4,7 +4,10 @@ Notable changes to IntegraDraw are recorded here.
 
 ## Unreleased
 
-- No unreleased changes.
+- Added a tag-gated release pipeline that builds and verifies the desktop JAR and static web application before publication.
+- Added synchronized Java/web/tag version checks, executable-JAR smoke testing and deterministic release-bundle validation.
+- Added consolidated checksums, Java and web CycloneDX SBOMs, dependency evidence, source-commit records and tag-only GitHub attestations.
+- Documented the immutable draft-to-public release process without creating a tag or changing the repository's licensing status.
 
 ## 1.1.0 — 2026-07-19
 

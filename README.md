@@ -96,9 +96,38 @@ Pull requests and pushes run:
 - Java 17 compilation, the JUnit regression suite and executable JAR packaging;
 - strict TypeScript checking;
 - expression-parser and integration tests;
+- release-metadata and static-site validation;
 - the production Pages build.
 
 Each successful Java run publishes a short-lived build artifact containing the executable JAR, SHA-256 checksums and a CycloneDX SBOM. Dependabot monitors Maven, npm and GitHub Actions dependencies each month.
+
+## Release process
+
+The release workflow runs the same candidate build on pull requests, manual dispatches and `v*` tag pushes. Pull requests and manual runs can inspect the complete output, but they cannot publish a release. A manual run can also supply an optional `v<version>` value to exercise the exact tag validator safely.
+
+Before a tag can publish, the workflow requires:
+
+- the version in `pom.xml` and `web/package.json` to match;
+- the npm lockfile to carry the same project version;
+- a dated heading for that version in `CHANGELOG.md`;
+- a tag named exactly `v<version>`;
+- the tagged commit to belong to the default branch;
+- Java 17 tests, packaging and a real `java -jar … --version` smoke test;
+- web typechecking, tests, validation and a production build;
+- Java and web CycloneDX SBOMs plus dependency inventories;
+- one source-commit record and one consolidated, verified `SHA256SUMS` file.
+
+The tag-only job attests every checksummed asset through GitHub's artifact-attestation service. It then uploads the candidate to a draft GitHub Release, verifies every remote asset digest and makes the release public only after those checks pass. Existing releases are never overwritten.
+
+Run the metadata and bundle-validator tests locally with:
+
+```bash
+cd web
+npm ci
+npm run check
+```
+
+No release tag is created by repository automation. A maintainer must review the candidate workflow, update the changelog and deliberately push the matching tag.
 
 ## Product demo
 

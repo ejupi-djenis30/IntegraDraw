@@ -1,6 +1,8 @@
 target/
+release/
 web/node_modules/
 web/dist/
+web/target/
 web/.vite/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
