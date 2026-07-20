@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import {
   appendFile,
   copyFile,
@@ -25,6 +25,7 @@ const branchPattern = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._/-]+$/;
 const checksumLinePattern = /^([0-9a-f]{64})  ([^/\\]+)$/;
 const maxProcessBuffer = 16 * 1024 * 1024;
 const githubApiVersion = "2026-03-10";
+export const mitLicenseSha256 = "ae2531d1e1568f847f7c73a3d084f80a4bc7487db56d3e8e0cbaef28f01c1d0b";
 
 function compareText(left, right) {
   return left < right ? -1 : left > right ? 1 : 0;
@@ -81,6 +82,11 @@ function projectMetadataFromPom(pom) {
     /<project\.build\.outputTimestamp>\s*([^<]+?)\s*<\/project\.build\.outputTimestamp>/,
   );
   assert.ok(outputTimestamp, "pom.xml must pin project.build.outputTimestamp.");
+
+  const projectLicense = visiblePom.match(
+    /<licenses>\s*<license>\s*<name>\s*MIT License\s*<\/name>\s*<url>\s*https:\/\/spdx\.org\/licenses\/MIT\.html\s*<\/url>\s*<distribution>\s*repo\s*<\/distribution>\s*<\/license>\s*<\/licenses>/,
+  );
+  assert.ok(projectLicense, "pom.xml must declare the MIT SPDX license metadata.");
 
   return { version: coordinates[1], outputTimestamp: outputTimestamp[1] };
 }
@@ -161,20 +167,47 @@ export function parseChangelogSections(markdown) {
   return sections;
 }
 
-export function validateVersionTexts({ pom, packageJson, packageLockJson, changelog, tag }) {
+export function validateMitLicenseText(text) {
+  assert.equal(
+    sha256Bytes(Buffer.from(text, "utf8")),
+    mitLicenseSha256,
+    "LICENSE must contain the contributor-approved canonical MIT License text.",
+  );
+  return { spdx: "MIT", sha256: mitLicenseSha256 };
+}
+
+function approvedMitLicensePresent(root) {
+  const licensePath = resolve(root, "LICENSE");
+  if (!existsSync(licensePath)) return false;
+  try {
+    validateMitLicenseText(readFileSync(licensePath, "utf8"));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function validateVersionTexts({ pom, packageJson, packageLockJson, changelog, licenseText, tag }) {
   const javaMetadata = projectMetadataFromPom(pom);
   const webMetadata = JSON.parse(packageJson);
   const lockMetadata = JSON.parse(packageLockJson);
+  const license = validateMitLicenseText(licenseText);
   const version = javaMetadata.version;
 
   assert.match(version, stableVersionPattern, "Release versions must be stable MAJOR.MINOR.PATCH values.");
   assert.equal(webMetadata.name, "integradraw-web", "web/package.json must retain the project name.");
   assert.equal(webMetadata.version, version, "pom.xml and web/package.json must declare the same version.");
+  assert.equal(webMetadata.license, "MIT", "web/package.json must declare the MIT SPDX identifier.");
   assert.equal(lockMetadata.version, version, "web/package-lock.json must declare the project version.");
   assert.equal(
     lockMetadata.packages?.[""]?.version,
     version,
     "The root package in web/package-lock.json must declare the project version.",
+  );
+  assert.equal(
+    lockMetadata.packages?.[""]?.license,
+    "MIT",
+    "The root package in web/package-lock.json must declare the MIT SPDX identifier.",
   );
 
   const sections = parseChangelogSections(changelog);
@@ -208,17 +241,19 @@ export function validateVersionTexts({ pom, packageJson, packageLockJson, change
     releaseDate: release.date,
     outputTimestamp: expectedTimestamp,
     sourceDateEpoch: Math.floor(Date.parse(expectedTimestamp) / 1000),
+    license,
   };
 }
 
 export async function validateReleaseMetadata({ root = repositoryRoot, tag } = {}) {
-  const [pom, packageJson, packageLockJson, changelog] = await Promise.all([
+  const [pom, packageJson, packageLockJson, changelog, licenseText] = await Promise.all([
     readFile(resolve(root, "pom.xml"), "utf8"),
     readFile(resolve(root, "web/package.json"), "utf8"),
     readFile(resolve(root, "web/package-lock.json"), "utf8"),
     readFile(resolve(root, "CHANGELOG.md"), "utf8"),
+    readFile(resolve(root, "LICENSE"), "utf8"),
   ]);
-  return validateVersionTexts({ pom, packageJson, packageLockJson, changelog, tag });
+  return validateVersionTexts({ pom, packageJson, packageLockJson, changelog, licenseText, tag });
 }
 
 function confinedPath(root, child) {
@@ -480,6 +515,11 @@ export async function validateExecutableJar(file, version) {
   assert.equal(manifest.get("main-class"), "com.planck.Main", "Desktop JAR has the wrong Main-Class.");
   assert.equal(manifest.get("implementation-title"), "IntegraDraw", "Desktop JAR has the wrong title.");
   assert.equal(manifest.get("implementation-version"), version, "Desktop JAR has the wrong version.");
+  assert.equal(manifest.get("project-license"), "MIT", "Desktop JAR must declare the MIT SPDX identifier.");
+  const licensePath = "META-INF/licenses/com.planck/integradraw/LICENSE";
+  assert.equal(manifest.get("project-license-file"), licensePath, "Desktop JAR points to the wrong license file.");
+  assert.ok(entries.has(licensePath), "Desktop JAR is missing the project license.");
+  validateMitLicenseText(entries.get(licensePath).contents.toString("utf8"));
   return entries;
 }
 
@@ -487,12 +527,14 @@ export async function validateStaticWebArchive(file, releaseDate) {
   const entries = await readZipEntries(file, "Static web archive");
   for (const required of [
     "index.html",
+    "LICENSE",
     "brand-mark.svg",
     "favicon.svg",
     "social-preview.png",
   ]) {
     assert.ok(entries.has(required), `Static web archive is missing ${required}.`);
   }
+  validateMitLicenseText(entries.get("LICENSE").contents.toString("utf8"));
   assert.ok([...entries.keys()].some((name) => /^assets\/[^/]+\.js$/.test(name)), "Static web archive has no JS bundle.");
   assert.ok([...entries.keys()].some((name) => /^assets\/[^/]+\.css$/.test(name)), "Static web archive has no CSS bundle.");
   const expectedTimestamp = dosTimestamp(releaseDate);
@@ -549,6 +591,11 @@ export function validateCycloneDx(bom, { platform, version }) {
   for (const [field, expected] of Object.entries(expectedRoot)) {
     assert.equal(bom.metadata.component[field], expected, `${platform} SBOM root ${field} is incorrect.`);
   }
+  assert.deepEqual(
+    bom.metadata.component.licenses,
+    [{ license: { id: "MIT" } }],
+    `${platform} SBOM root component must use the MIT SPDX identifier.`,
+  );
   const rootRef = bom.metadata.component["bom-ref"];
   assert.ok(typeof rootRef === "string" && rootRef !== "", `${platform} SBOM root component needs a bom-ref.`);
 
@@ -614,6 +661,13 @@ export function normalizeCycloneDx(rawBom, { platform, version }) {
     bom.metadata.component.name = "integradraw-web";
     bom.metadata.component.type = "application";
   }
+  assert.ok(
+    bom.metadata.component.licenses?.some(({ license }) =>
+      license?.id === "MIT"
+      || (license?.name === "MIT License" && license?.url === "https://spdx.org/licenses/MIT.html")),
+    `${platform} SBOM source metadata must declare the MIT License.`,
+  );
+  bom.metadata.component.licenses = [{ license: { id: "MIT" } }];
   const normalized = canonicalize(bom);
   validateCycloneDx(normalized, { platform, version });
   return `${JSON.stringify(normalized, null, 2)}\n`;
@@ -737,6 +791,7 @@ export function validateDependencyEvidenceAgainstSbom({ platform, bom, evidence,
 
 function releaseFileNames(version) {
   return [
+    "LICENSE",
     "SOURCE_COMMIT",
     `integradraw-${version}.jar`,
     `integradraw-java-${version}.cdx.json`,
@@ -749,9 +804,9 @@ function releaseFileNames(version) {
 }
 
 function expectedReleaseMetadata(metadata, sourceCommit) {
-  const { version, releaseDate, sourceDateEpoch } = metadata;
+  const { version, releaseDate, sourceDateEpoch, license } = metadata;
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     project: "IntegraDraw",
     version,
     tag: `v${version}`,
@@ -759,6 +814,10 @@ function expectedReleaseMetadata(metadata, sourceCommit) {
     sourceDateEpoch,
     sourceCommit,
     reproducible: true,
+    license: {
+      ...license,
+      file: "LICENSE",
+    },
     artifacts: {
       desktop: `integradraw-${version}.jar`,
       staticWeb: `integradraw-web-${version}.zip`,
@@ -820,6 +879,7 @@ export async function assembleReleaseBundle({
   const { version } = metadata;
 
   const inputs = new Map([
+    ["LICENSE", resolve(root, "LICENSE")],
     [`integradraw-${version}.jar`, resolve(root, `target/integradraw-${version}.jar`)],
     [`integradraw-java-${version}.cdx.json`, resolve(javaSbom)],
     [`integradraw-java-dependencies-${version}.txt`, resolve(javaDependencies)],
@@ -857,6 +917,7 @@ export async function validateReleaseBundle({ directory, metadata, sourceCommit 
   const checksums = parseChecksumText(await readFile(resolve(directory, "SHA256SUMS"), "utf8"));
   assert.deepEqual(checksums, inventory.map(({ name, digest }) => ({ name, digest })), "SHA256SUMS does not match the bundle inventory.");
   assert.equal(await readFile(resolve(directory, "SOURCE_COMMIT"), "utf8"), `${sourceCommit}\n`);
+  validateMitLicenseText(await readFile(resolve(directory, "LICENSE"), "utf8"));
 
   const releaseMetadata = JSON.parse(await readFile(resolve(directory, "release-metadata.json"), "utf8"));
   assert.deepEqual(releaseMetadata, expectedReleaseMetadata(metadata, sourceCommit));
@@ -1039,6 +1100,7 @@ export async function buildReleaseCandidate({
   runProcess(npm.command, [...npm.prefix, "ci"], { cwd: webRoot, env: buildEnvironment });
   runProcess(npm.command, [...npm.prefix, "run", "check"], { cwd: webRoot, env: buildEnvironment });
   runProcess(npm.command, [...npm.prefix, "run", "build"], { cwd: webRoot, env: buildEnvironment });
+  await copyFile(resolve(root, "LICENSE"), resolve(webRoot, "dist/LICENSE"));
   const npmSbom = runProcess(npm.command, [...npm.prefix, "sbom", "--sbom-format", "cyclonedx"], {
     cwd: webRoot,
     env: buildEnvironment,
@@ -1369,11 +1431,11 @@ export async function publishRelease({
   eventName = process.env.GITHUB_EVENT_NAME,
   refType = process.env.GITHUB_REF_TYPE,
   publicationAuthorized = process.env.RELEASE_PUBLICATION_ENABLED === "true"
-    && ["LICENSE", "LICENSE.md", "LICENSE.txt"].some((name) => existsSync(resolve(root, name))),
+    && approvedMitLicensePresent(root),
   runProcess = defaultRunProcess,
   pause = (milliseconds) => new Promise((resolvePromise) => setTimeout(resolvePromise, milliseconds)),
 }) {
-  assert.equal(publicationAuthorized, true, "Release publication is disabled until the project has an approved license.");
+  assert.equal(publicationAuthorized, true, "Release publication requires the contributor-approved MIT License.");
   assert.equal(eventName, "push", "Release publication requires a trusted tag-push event.");
   assert.equal(refType, "tag", "Release publication requires a trusted tag-push event.");
   assert.match(repository, repositoryPattern, "GitHub repository must use owner/name form.");
