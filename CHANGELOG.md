@@ -17,7 +17,7 @@ Notable changes to IntegraDraw are recorded here.
 - Rebuilt the browser workbench in strict TypeScript with a dependency-free expression parser.
 - Corrected interval handling and aligned numerical limits across the Java and browser apps.
 - Added visible midpoint, trapezoidal and Simpson-reference comparisons.
-- Added automated Java and browser tests, reproducible Pages deployment and a portfolio demo.
+- Added automated Java and browser tests and reproducible Pages deployment.
 - Added packaged desktop artifacts, checksums, a CycloneDX SBOM and dependency automation.
 
 ## 1.0.0 — 2023

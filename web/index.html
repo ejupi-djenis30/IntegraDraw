@@ -6,7 +6,7 @@
     <meta name="referrer" content="no-referrer" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'; font-src 'self'; manifest-src 'self'"
+      content="default-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; img-src 'self' data:; media-src 'none'; style-src 'self'; script-src 'self'; connect-src 'self'; font-src 'self'; manifest-src 'self'"
     />
     <meta name="theme-color" content="#0e1111" />
     <meta
@@ -26,8 +26,6 @@
     <meta property="og:image:alt" content="IntegraDraw visual calculus workbench" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="675" />
-    <meta property="og:video" content="https://ejupi-djenis30.github.io/IntegraDraw/integradraw-demo.mp4" />
-    <meta property="og:video:type" content="video/mp4" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="IntegraDraw — See an integral take shape" />
     <meta name="twitter:description" content="A visual calculus workbench rebuilt from a collaborative Java prototype." />
@@ -46,7 +44,6 @@
         <span>IntegraDraw</span>
       </a>
       <nav>
-        <a href="#demo">Demo</a>
         <a href="#workbench">Workbench</a>
         <a href="#build-notes">Build notes</a>
         <a href="#credits">Credits</a>
@@ -95,40 +92,6 @@
             <strong>1.772415</strong>
           </div>
           <div class="hero-caption">Midpoint and trapezoidal rules, compared honestly.</div>
-        </div>
-      </section>
-
-      <section class="demo-section" id="demo" aria-labelledby="demo-title">
-        <div class="demo-inner">
-          <div class="demo-copy reveal">
-            <p class="eyebrow">10 seconds / Real interface</p>
-            <h2 id="demo-title">Watch the error shrink.</h2>
-            <p>
-              Start with eight visible rectangles, raise the resolution to 160 segments, then carry the same
-              workbench onto a phone. Every frame comes from the working application.
-            </p>
-          </div>
-          <figure class="demo-player reveal">
-            <video
-              controls
-              muted
-              loop
-              playsinline
-              preload="metadata"
-              poster="./poster.svg"
-              width="1280"
-              height="720"
-              aria-label="IntegraDraw demonstration showing numerical convergence and the responsive mobile interface"
-            >
-              <source src="./integradraw-demo.mp4" type="video/mp4" />
-              <a href="./integradraw-demo.mp4">Download the IntegraDraw demonstration.</a>
-            </video>
-            <figcaption>
-              <span>1280 × 720</span>
-              <span>Midpoint + trapezoidal</span>
-              <span>Desktop + mobile</span>
-            </figcaption>
-          </figure>
         </div>
       </section>
 

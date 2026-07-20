@@ -489,9 +489,7 @@ export async function validateStaticWebArchive(file, releaseDate) {
     "index.html",
     "brand-mark.svg",
     "favicon.svg",
-    "poster.svg",
     "social-preview.png",
-    "integradraw-demo.mp4",
   ]) {
     assert.ok(entries.has(required), `Static web archive is missing ${required}.`);
   }

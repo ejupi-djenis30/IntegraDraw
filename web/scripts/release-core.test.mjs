@@ -140,9 +140,7 @@ async function createWebArchive(root) {
   for (const file of [
     "brand-mark.svg",
     "favicon.svg",
-    "poster.svg",
     "social-preview.png",
-    "integradraw-demo.mp4",
     "assets/app.js",
     "assets/app.css",
   ]) {
