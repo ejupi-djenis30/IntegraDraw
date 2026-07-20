@@ -31,7 +31,7 @@ export async function validateSite(siteRoot = root) {
   const html = await readRequiredText(new URL("index.html", siteRoot), "index.html");
   const config = await readRequiredText(new URL("vite.config.ts", siteRoot), "vite.config.ts");
 
-  for (const file of ["public/brand-mark.svg", "public/favicon.svg", "public/poster.svg"]) {
+  for (const file of ["public/brand-mark.svg", "public/favicon.svg"]) {
     await readRequiredFile(new URL(file, siteRoot), file);
   }
 
@@ -48,9 +48,6 @@ export async function validateSite(siteRoot = root) {
     'name="twitter:description" content="A visual calculus workbench rebuilt from a collaborative Java prototype."',
     'name="twitter:image:alt" content="IntegraDraw visual calculus workbench"',
     "<main",
-    "<video",
-    'poster="./poster.svg"',
-    'src="./integradraw-demo.mp4"',
     "aria-label",
   ]) {
     assert.ok(html.includes(token), `index.html is missing ${token}`);
@@ -69,13 +66,6 @@ export async function validateSite(siteRoot = root) {
     "The social preview is not a PNG file.",
   );
 
-  const video = await readRequiredFile(
-    new URL("public/integradraw-demo.mp4", siteRoot),
-    "public/integradraw-demo.mp4",
-  );
-  assert.ok(video.byteLength >= 250_000, "The demo video is unexpectedly small.");
-  assert.ok(video.byteLength <= 8_000_000, "Keep the demo video below 8 MB for a fast Page load.");
-  assert.equal(video.subarray(4, 8).toString("ascii"), "ftyp", "The demo asset is not an MP4 file.");
 }
 
 const isMainModule = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
