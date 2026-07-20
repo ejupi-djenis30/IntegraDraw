@@ -34,8 +34,8 @@ import {
   verifyRemoteAssetInventory,
 } from "./release-core.mjs";
 
-const version = "1.1.0";
-const releaseDate = "2026-07-19";
+const version = "1.1.1";
+const releaseDate = "2026-07-20";
 const sourceCommit = "0123456789abcdef0123456789abcdef01234567";
 const licenseText = await readFile(join(repositoryRoot, "LICENSE"), "utf8");
 const metadata = {
@@ -365,18 +365,18 @@ describe("release metadata", () => {
 ## 8.8.8 — 2026-01-01
 \`\`\`
 ## Unreleased
-## 1.1.0 — 2026-07-19
+## 1.1.1 — 2026-07-20
 - Visible release note.
 `;
     expect(parseChangelogSections(markdown).map(({ title }) => title)).toEqual([
       "Unreleased",
-      "1.1.0 — 2026-07-19",
+      "1.1.1 — 2026-07-20",
     ]);
     expect(validateVersionTexts({ ...versionFixture(), changelog: markdown })).toMatchObject({ version });
   });
 
   it("rejects prerelease and build-metadata versions", () => {
-    for (const unstable of ["1.1.0-rc.1", "1.1.0+build.1"]) {
+    for (const unstable of ["1.1.1-rc.1", "1.1.1+build.1"]) {
       expect(() =>
         validateVersionTexts({
           ...versionFixture(),
@@ -398,21 +398,21 @@ describe("release metadata", () => {
 
   it("rejects invalid dates and Maven output timestamp drift", () => {
     expect(() => validateVersionTexts({ ...versionFixture(), changelog: changelog(version, "2026-02-30") })).toThrow(
-      "invalid 1.1.0 release date",
+      "invalid 1.1.1 release date",
     );
     expect(() =>
       validateVersionTexts({
         ...versionFixture(),
-        pom: versionFixture().pom.replace(`${releaseDate}T00:00:00Z`, "2026-07-20T00:00:00Z"),
+        pom: versionFixture().pom.replace(`${releaseDate}T00:00:00Z`, "2026-07-21T00:00:00Z"),
       }),
     ).toThrow("outputTimestamp");
   });
 
   it("rejects version and tag drift", () => {
     expect(() =>
-      validateVersionTexts({ ...versionFixture(), packageJson: JSON.stringify({ name: "integradraw-web", version: "1.1.1", license: "MIT" }) }),
+      validateVersionTexts({ ...versionFixture(), packageJson: JSON.stringify({ name: "integradraw-web", version: "1.1.2", license: "MIT" }) }),
     ).toThrow("same version");
-    expect(() => validateVersionTexts({ ...versionFixture(), tag: "v1.1.1" })).toThrow("exactly v1.1.0");
+    expect(() => validateVersionTexts({ ...versionFixture(), tag: "v1.1.2" })).toThrow("exactly v1.1.1");
   });
 
   it("rejects license text and SPDX metadata drift", () => {

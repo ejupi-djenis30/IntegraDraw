@@ -59,7 +59,7 @@ Requirements: JDK 17 and Maven 3.9.16. The included Maven wrapper supplies the e
 
 ```bash
 ./mvnw clean verify
-java -jar target/integradraw-1.1.0.jar
+java -jar target/integradraw-1.1.1.jar
 ```
 
 The packaged JAR includes the Symja dependencies and has a valid entry point. The Swing UI is created in Java code, so it runs from Maven, an IDE or the JAR without IntelliJ’s `.form` compiler.
@@ -132,7 +132,7 @@ npm run check
 
 The release validator, deterministic ZIP writer, artifact parsers, inventory comparison and publication state machine are dependency-free Node.js modules covered by negative tests. The Maven wrapper pins Maven 3.9.16 and verifies the downloaded distribution checksum.
 
-No release tag is created by repository automation. The original contributors approved the MIT License, so publication is enabled; the workflow still verifies the exact license text before it can publish. A maintainer must create a signed `v1.1.0` tag on the reviewed default-branch commit to start the trusted release path.
+No release tag is created by repository automation. The original contributors approved the MIT License, so publication is enabled; the workflow still verifies the exact license text before it can publish. A maintainer must create a signed `v1.1.1` tag on the reviewed default-branch commit to start the trusted release path.
 
 ## Contributing and security
 
@@ -145,8 +145,8 @@ privately through [SECURITY.md](SECURITY.md), not through a public issue.
 IntegraDraw started as a collaborative school project in 2023.
 
 - **Djenis Ejupi** — original implementation and current modernization.
-- **`project contributors`** — original Java implementation and UI/mathematics contributions.
+- **Project contributors** — original Java implementation and UI/mathematics contributions.
 
-The original Git history and the legacy IntelliJ `.form` file remain in the repository so earlier work stays attributable. The current runtime no longer depends on that file.
+The legacy IntelliJ `.form` file remains in the repository as a record of the original interface. The current runtime no longer depends on it, and earlier work is credited collectively.
 
-IntegraDraw is available under the [MIT License](LICENSE). Copyright remains with Djenis Ejupi and `project contributors`.
+IntegraDraw is available under the [MIT License](LICENSE). Copyright remains with Djenis Ejupi and project contributors.
