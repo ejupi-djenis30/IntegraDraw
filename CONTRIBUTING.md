@@ -4,6 +4,7 @@ Thanks for helping make numerical integration easier to inspect. Focused changes
 mathematical or usability benefit are the easiest to review.
 
 By participating, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+Unless stated otherwise, contributions you submit are licensed under the project's [MIT License](LICENSE).
 
 ## Set up the project
 

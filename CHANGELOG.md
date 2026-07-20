@@ -8,6 +8,7 @@ Notable changes to IntegraDraw are recorded here.
 
 ## 1.1.0 — 2026-07-19
 
+- Licensed the project under MIT with the approval of its original contributors and enabled verified release publication.
 - Added a license-gated release pipeline with independent security and reproducibility checks before publication.
 - Added stable-only Java, web, lockfile, changelog and tag version validation.
 - Made the executable JAR, static web archive and normalized CycloneDX SBOMs reproducible across clean builds.
