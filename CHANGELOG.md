@@ -8,12 +8,12 @@ Notable changes to IntegraDraw are recorded here.
 
 ## 1.1.0 — 2026-07-19
 
-- Added a tag-gated release pipeline with independent security and reproducibility gates before publication.
+- Added a license-gated release pipeline with independent security and reproducibility checks before publication.
 - Added stable-only Java, web, lockfile, changelog and tag version validation.
 - Made the executable JAR, static web archive and normalized CycloneDX SBOMs reproducible across clean builds.
-- Added semantic artifact validation, dependency evidence, source-commit records, consolidated checksums and tag-only attestations.
-- Added draft-release inventory and digest verification before a release can become public.
-- Upgraded the transitive Jackson stack to 2.21.4 to resolve CVE-2026-54512 and CVE-2026-54513.
+- Added semantic artifact validation, exact SBOM-to-dependency reconciliation, source-commit records and consolidated checksums.
+- Added attestations for every candidate asset and a recoverable, contract-bound publisher that verifies immutable release state.
+- Upgraded the transitive Jackson stack to 2.21.5 to resolve CVE-2026-54512, CVE-2026-54513 and CVE-2026-54515.
 - Rebuilt the browser workbench in strict TypeScript with a dependency-free expression parser.
 - Corrected interval handling and aligned numerical limits across the Java and browser apps.
 - Added visible midpoint, trapezoidal and Simpson-reference comparisons.

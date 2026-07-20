@@ -21,8 +21,10 @@ export const repositoryRoot = resolve(fileURLToPath(new URL("../../", import.met
 const stableVersionPattern = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const sourceCommitPattern = /^[0-9a-f]{40}$/;
 const repositoryPattern = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+const branchPattern = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._/-]+$/;
 const checksumLinePattern = /^([0-9a-f]{64})  ([^/\\]+)$/;
 const maxProcessBuffer = 16 * 1024 * 1024;
+const githubApiVersion = "2026-03-10";
 
 function compareText(left, right) {
   return left < right ? -1 : left > right ? 1 : 0;
@@ -560,6 +562,7 @@ export function validateCycloneDx(bom, { platform, version }) {
 
   assert.ok(Array.isArray(bom.dependencies) && bom.dependencies.length > 0, `${platform} SBOM has no dependency graph.`);
   const dependencyRefs = new Set();
+  const dependencyGraph = new Map();
   for (const dependency of bom.dependencies) {
     assertPlainObject(dependency, `${platform} SBOM dependency`);
     assert.ok(knownRefs.has(dependency.ref), `${platform} SBOM dependency has unknown ref ${dependency.ref}.`);
@@ -572,8 +575,29 @@ export function validateCycloneDx(bom, { platform, version }) {
       targets.add(target);
     }
     dependencyRefs.add(dependency.ref);
+    dependencyGraph.set(dependency.ref, targets);
   }
   assert.ok(dependencyRefs.has(rootRef), `${platform} SBOM graph does not contain the root component.`);
+  assert.deepEqual(
+    [...dependencyRefs].sort(compareText),
+    [...knownRefs].sort(compareText),
+    `${platform} SBOM graph must contain exactly one node for every component.`,
+  );
+  const reachable = new Set([rootRef]);
+  const pending = [rootRef];
+  while (pending.length > 0) {
+    const reference = pending.pop();
+    for (const target of dependencyGraph.get(reference) ?? []) {
+      if (reachable.has(target)) continue;
+      reachable.add(target);
+      pending.push(target);
+    }
+  }
+  assert.deepEqual(
+    [...reachable].sort(compareText),
+    [...knownRefs].sort(compareText),
+    `${platform} SBOM contains components that are not reachable from the root.`,
+  );
 }
 
 export function normalizeCycloneDx(rawBom, { platform, version }) {
@@ -592,13 +616,30 @@ export function normalizeCycloneDx(rawBom, { platform, version }) {
 }
 
 export function normalizeJavaDependencyEvidence(text, version) {
-  const normalized = `${text.replace(/\r\n?/g, "\n").trim()}\n`;
-  assert.ok(
-    normalized.split("\n").some((line) => line.trim() === `com.planck:integradraw:jar:${version}`),
-    "Java dependency evidence does not identify this build.",
-  );
-  assert.ok(normalized.includes(":runtime"), "Java dependency evidence has no runtime dependency entries.");
-  return normalized;
+  assert.equal(typeof text, "string", "Java dependency evidence must be text.");
+  const root = `com.planck:integradraw:jar:${version}`;
+  const dependencies = new Set();
+  let identifiedBuild = false;
+  for (const rawLine of text.replace(/\r\n?/g, "\n").split("\n")) {
+    let line = rawLine.trim();
+    if (line === "" || line === "The following files have been resolved:") continue;
+    line = line.replace(/^[|+\\\-\s]+/, "").replace(/\s+--\s+module\s+.+$/, "");
+    if (line === root) {
+      identifiedBuild = true;
+      continue;
+    }
+    const parts = line.split(":");
+    assert.ok(parts.length === 5 || parts.length === 6, `Malformed Java dependency coordinate: ${line}`);
+    const scope = parts.at(-1);
+    assert.ok(["compile", "runtime"].includes(scope), `Unexpected Java dependency scope ${scope}.`);
+    assert.match(parts[0], /^[A-Za-z0-9_.-]+$/, `Invalid Java dependency group in ${line}.`);
+    assert.match(parts[1], /^[A-Za-z0-9_.-]+$/, `Invalid Java dependency artifact in ${line}.`);
+    assert.equal(dependencies.has(line), false, `Java dependency evidence repeats ${line}.`);
+    dependencies.add(line);
+  }
+  assert.ok(identifiedBuild, "Java dependency evidence does not identify this build.");
+  assert.ok(dependencies.size > 0, "Java dependency evidence has no runtime dependency entries.");
+  return `${[root, ...[...dependencies].sort(compareText)].join("\n")}\n`;
 }
 
 function normalizeNpmDependencyNode(node, label) {
@@ -631,6 +672,63 @@ export function normalizeWebDependencyEvidence(rawEvidence, version) {
   assert.equal(rawEvidence.problems, undefined, "Web dependency evidence reports package-tree problems.");
   const normalized = normalizeNpmDependencyNode(rawEvidence, "Web dependency evidence root");
   return `${JSON.stringify(canonicalize(normalized), null, 2)}\n`;
+}
+
+function sbomDependencyIdentities(bom, platform) {
+  const identities = new Set();
+  for (const component of bom.components) {
+    const identity = platform === "java"
+      ? `${component.group}:${component.name}@${component.version}`
+      : `${component.name}@${component.version}`;
+    assert.equal(identities.has(identity), false, `${platform} SBOM repeats dependency identity ${identity}.`);
+    identities.add(identity);
+  }
+  return identities;
+}
+
+function javaEvidenceIdentities(text, version) {
+  const normalized = normalizeJavaDependencyEvidence(text, version);
+  const identities = new Set();
+  for (const line of normalized.trim().split("\n")) {
+    const coordinate = line;
+    if (coordinate === `com.planck:integradraw:jar:${version}`) continue;
+    const parts = coordinate.split(":");
+    assert.ok(parts.length === 5 || parts.length === 6, `Malformed Java dependency coordinate: ${coordinate}`);
+    const dependencyVersion = parts.at(-2);
+    const scope = parts.at(-1);
+    assert.ok(["compile", "runtime"].includes(scope), `Unexpected Java dependency scope ${scope}.`);
+    const identity = `${parts[0]}:${parts[1]}@${dependencyVersion}`;
+    identities.add(identity);
+  }
+  return identities;
+}
+
+function webEvidenceIdentities(rawEvidence, version) {
+  const normalized = JSON.parse(normalizeWebDependencyEvidence(rawEvidence, version));
+  const identities = new Set();
+  const visit = (dependencies) => {
+    if (dependencies === undefined) return;
+    for (const [name, dependency] of Object.entries(dependencies)) {
+      const identity = `${name}@${dependency.version}`;
+      identities.add(identity);
+      visit(dependency.dependencies);
+    }
+  };
+  visit(normalized.dependencies);
+  return identities;
+}
+
+export function validateDependencyEvidenceAgainstSbom({ platform, bom, evidence, version }) {
+  validateCycloneDx(bom, { platform, version });
+  const sbomIdentities = sbomDependencyIdentities(bom, platform);
+  const evidenceIdentities = platform === "java"
+    ? javaEvidenceIdentities(evidence, version)
+    : webEvidenceIdentities(evidence, version);
+  assert.deepEqual(
+    [...sbomIdentities].sort(compareText),
+    [...evidenceIdentities].sort(compareText),
+    `${platform} SBOM and dependency evidence describe different resolved packages.`,
+  );
 }
 
 function releaseFileNames(version) {
@@ -761,20 +859,19 @@ export async function validateReleaseBundle({ directory, metadata, sourceCommit 
   await validateExecutableJar(resolve(directory, `integradraw-${version}.jar`), version);
   await validateStaticWebArchive(resolve(directory, `integradraw-web-${version}.zip`), releaseDate);
 
+  const sboms = {};
   for (const platform of ["java", "web"]) {
-    const sbom = JSON.parse(
+    sboms[platform] = JSON.parse(
       await readFile(resolve(directory, `integradraw-${platform}-${version}.cdx.json`), "utf8"),
     );
-    validateCycloneDx(sbom, { platform, version });
+    validateCycloneDx(sboms[platform], { platform, version });
   }
-  normalizeJavaDependencyEvidence(
-    await readFile(resolve(directory, `integradraw-java-dependencies-${version}.txt`), "utf8"),
-    version,
+  const javaEvidence = await readFile(resolve(directory, `integradraw-java-dependencies-${version}.txt`), "utf8");
+  const webEvidence = JSON.parse(
+    await readFile(resolve(directory, `integradraw-web-dependencies-${version}.json`), "utf8"),
   );
-  normalizeWebDependencyEvidence(
-    JSON.parse(await readFile(resolve(directory, `integradraw-web-dependencies-${version}.json`), "utf8")),
-    version,
-  );
+  validateDependencyEvidenceAgainstSbom({ platform: "java", bom: sboms.java, evidence: javaEvidence, version });
+  validateDependencyEvidenceAgainstSbom({ platform: "web", bom: sboms.web, evidence: webEvidence, version });
 }
 
 export async function compareReleaseBundles(leftDirectory, rightDirectory) {
@@ -919,15 +1016,17 @@ export async function buildReleaseCandidate({
     [
       "--batch-mode",
       "--no-transfer-progress",
-      "org.apache.maven.plugins:maven-dependency-plugin:3.9.0:tree",
-      "-Dscope=runtime",
-      "-DoutputType=text",
+      "org.apache.maven.plugins:maven-dependency-plugin:3.9.0:list",
+      "-DincludeScope=runtime",
+      "-Dsort=true",
+      "-DoutputAbsoluteArtifactFilename=false",
       `-DoutputFile=${javaDependencyPath}`,
     ],
     { cwd: root, env: buildEnvironment },
   );
+  const rawJavaDependencies = await readFile(javaDependencyPath, "utf8");
   const normalizedJavaDependencies = normalizeJavaDependencyEvidence(
-    await readFile(javaDependencyPath, "utf8"),
+    `com.planck:integradraw:jar:${metadata.version}\n${rawJavaDependencies}`,
     metadata.version,
   );
   await writeFile(javaDependencyPath, normalizedJavaDependencies, "utf8");
@@ -992,47 +1091,354 @@ export async function buildReleaseCandidate({
   return metadata;
 }
 
+function githubCommandError(args, result) {
+  const detail = (result.stderr || result.stdout || `exit ${result.status}`).trim();
+  return new Error(`gh ${args.join(" ")} failed: ${detail}`);
+}
+
+function runGitHub(runProcess, args) {
+  const result = runProcess("gh", args, { capture: true, allowFailure: true });
+  if (result.status !== 0) throw githubCommandError(args, result);
+  return result;
+}
+
+function githubApiArguments(endpoint, additional = []) {
+  return ["api", endpoint, "-H", `X-GitHub-Api-Version: ${githubApiVersion}`, ...additional];
+}
+
+function githubJson(runProcess, endpoint, additional = []) {
+  const result = runGitHub(runProcess, githubApiArguments(endpoint, additional));
+  try {
+    return JSON.parse(result.stdout);
+  } catch (error) {
+    throw new Error(`GitHub returned invalid JSON for ${endpoint}: ${error.message}`);
+  }
+}
+
+function validateReleaseIdentity(release, { tag, title, body, sourceCommit }) {
+  assertPlainObject(release, "GitHub Release");
+  assert.ok(Number.isSafeInteger(release.id) && release.id > 0, "GitHub Release has an invalid ID.");
+  assert.equal(release.tag_name, tag, "GitHub Release returned the wrong tag.");
+  assert.equal(release.target_commitish, sourceCommit, "GitHub Release targets the wrong source commit.");
+  assert.equal(release.name, title, "GitHub Release has the wrong title.");
+  assert.equal(release.body, body, "GitHub Release has a foreign or stale release contract.");
+  assert.equal(release.prerelease, false, "GitHub Release must not be a prerelease.");
+  assert.ok(Array.isArray(release.assets), "GitHub Release is missing its asset inventory.");
+}
+
+function validateDraftRelease(release, contract) {
+  validateReleaseIdentity(release, contract);
+  assert.equal(release.draft, true, `Refusing to modify published release ${contract.tag}.`);
+  assert.ok(typeof release.upload_url === "string" && release.upload_url !== "", "GitHub draft is missing its upload URL.");
+}
+
+function validatePublishedRelease(release, contract) {
+  validateReleaseIdentity(release, contract);
+  assert.equal(release.draft, false, `GitHub Release ${contract.tag} remained a draft.`);
+  assert.equal(release.immutable, true, `Published GitHub Release ${contract.tag} is not immutable.`);
+}
+
+function listReleaseForTag(runProcess, repository, tag) {
+  const matches = [];
+  for (let page = 1; page <= 100; page += 1) {
+    const releases = githubJson(
+      runProcess,
+      `repos/${repository}/releases?per_page=100&page=${page}`,
+    );
+    assert.ok(Array.isArray(releases), "GitHub did not return a release list.");
+    matches.push(...releases.filter((release) => release?.tag_name === tag));
+    if (releases.length < 100) break;
+    assert.notEqual(page, 100, "GitHub release pagination exceeded the supported limit.");
+  }
+  assert.ok(matches.length <= 1, `GitHub contains multiple releases for ${tag}; refusing ambiguous recovery.`);
+  return matches[0];
+}
+
+function resolveRemoteTag(runProcess, repository, tag) {
+  let object = githubJson(
+    runProcess,
+    `repos/${repository}/git/ref/tags/${encodeURIComponent(tag)}`,
+  ).object;
+  const visited = new Set();
+  for (let depth = 0; depth < 8; depth += 1) {
+    assertPlainObject(object, `Remote tag ${tag} target`);
+    assert.match(object.sha ?? "", sourceCommitPattern, `Remote tag ${tag} has an invalid target SHA.`);
+    if (object.type === "commit") return object.sha;
+    assert.equal(object.type, "tag", `Remote tag ${tag} targets unsupported object type ${object.type}.`);
+    assert.equal(visited.has(object.sha), false, `Remote tag ${tag} contains an annotation cycle.`);
+    visited.add(object.sha);
+    object = githubJson(runProcess, `repos/${repository}/git/tags/${object.sha}`).object;
+  }
+  throw new Error(`Remote tag ${tag} exceeds the supported annotation depth.`);
+}
+
+function remoteDefaultBranch(runProcess, repository) {
+  const branch = githubJson(runProcess, `repos/${repository}`).default_branch;
+  assert.ok(typeof branch === "string" && branchPattern.test(branch), "GitHub returned an invalid default branch.");
+  return branch;
+}
+
+function remoteBranchHead(runProcess, repository, branch) {
+  const ref = githubJson(
+    runProcess,
+    `repos/${repository}/git/ref/heads/${encodeURIComponent(branch)}`,
+  );
+  assert.equal(ref?.object?.type, "commit", `Default branch ${branch} does not resolve directly to a commit.`);
+  assert.match(ref.object.sha ?? "", sourceCommitPattern, `Default branch ${branch} has an invalid SHA.`);
+  return ref.object.sha;
+}
+
+function requireCommitInBranch(runProcess, repository, sourceCommit, branchHead) {
+  const comparison = githubJson(
+    runProcess,
+    `repos/${repository}/compare/${sourceCommit}...${branchHead}`,
+  );
+  assert.ok(
+    ["ahead", "identical"].includes(comparison.status) && comparison.merge_base_commit?.sha === sourceCommit,
+    `Verified source ${sourceCommit} is not contained in the current default branch.`,
+  );
+}
+
+function requireRemoteSourceBinding(runProcess, repository, tag, sourceCommit) {
+  assert.equal(
+    resolveRemoteTag(runProcess, repository, tag),
+    sourceCommit,
+    `Remote tag ${tag} does not resolve to the verified source commit.`,
+  );
+  const branch = remoteDefaultBranch(runProcess, repository);
+  const before = remoteBranchHead(runProcess, repository, branch);
+  requireCommitInBranch(runProcess, repository, sourceCommit, before);
+  const after = remoteBranchHead(runProcess, repository, branch);
+  if (after !== before) requireCommitInBranch(runProcess, repository, sourceCommit, after);
+  assert.equal(
+    resolveRemoteTag(runProcess, repository, tag),
+    sourceCommit,
+    `Remote tag ${tag} changed during source verification.`,
+  );
+  return branch;
+}
+
+function requireRemoteTag(runProcess, repository, tag, sourceCommit, phase) {
+  assert.equal(
+    resolveRemoteTag(runProcess, repository, tag),
+    sourceCommit,
+    `Remote tag ${tag} changed during ${phase}.`,
+  );
+}
+
+async function releaseContract({ root, metadata, tag, sourceCommit, inventory }) {
+  const changelog = await readFile(resolve(root, "CHANGELOG.md"), "utf8");
+  const sections = parseChangelogSections(changelog).filter((section) => section.version === metadata.version);
+  assert.equal(sections.length, 1, `CHANGELOG.md must contain one ${metadata.version} section for release notes.`);
+  const notes = sections[0].body.join("\n").trim();
+  assert.ok(notes.split("\n").some((line) => /^[-*+]\s+\S/.test(line)), "Release notes must contain a change item.");
+  const checksumAsset = inventory.find(({ name }) => name === "SHA256SUMS");
+  assert.ok(checksumAsset, "Release inventory is missing SHA256SUMS.");
+  const title = `IntegraDraw ${metadata.version}`;
+  const body = [
+    "## Changes",
+    "",
+    notes,
+    "",
+    "---",
+    "Release provenance",
+    "",
+    "- Contract: `integradraw-release/v1`",
+    `- Source commit: \`${sourceCommit}\``,
+    `- Candidate inventory: \`${checksumAsset.digest}\``,
+  ].join("\n");
+  return { tag, title, body, sourceCommit };
+}
+
+function releaseById(runProcess, repository, releaseId) {
+  return githubJson(runProcess, `repos/${repository}/releases/${releaseId}`);
+}
+
+function resetDraftAssets(runProcess, repository, release, contract) {
+  validateDraftRelease(release, contract);
+  const assetIds = new Set();
+  for (const asset of release.assets) {
+    assert.ok(Number.isSafeInteger(asset.id) && asset.id > 0, "GitHub draft contains an asset with an invalid ID.");
+    assert.equal(assetIds.has(asset.id), false, "GitHub draft contains duplicate asset IDs.");
+    assetIds.add(asset.id);
+    runGitHub(
+      runProcess,
+      githubApiArguments(`repos/${repository}/releases/assets/${asset.id}`, ["--method", "DELETE"]),
+    );
+  }
+  const clean = releaseById(runProcess, repository, release.id);
+  validateDraftRelease(clean, contract);
+  assert.equal(clean.assets.length, 0, `GitHub draft ${contract.tag} still has assets after reset.`);
+  return clean;
+}
+
+function createDraftRelease(runProcess, repository, contract) {
+  const created = githubJson(
+    runProcess,
+    `repos/${repository}/releases`,
+    [
+      "--method", "POST",
+      "-f", `tag_name=${contract.tag}`,
+      "-f", `target_commitish=${contract.sourceCommit}`,
+      "-f", `name=${contract.title}`,
+      "-f", `body=${contract.body}`,
+      "-F", "draft=true",
+      "-F", "prerelease=false",
+      "-F", "generate_release_notes=false",
+    ],
+  );
+  validateDraftRelease(created, contract);
+  return created;
+}
+
+function uploadReleaseAssets(runProcess, repository, tag, inventory, directory) {
+  runGitHub(runProcess, [
+    "release",
+    "upload",
+    tag,
+    ...inventory.map(({ name }) => resolve(directory, name)),
+    "--repo",
+    repository,
+  ]);
+}
+
+function verifyDraftInventory(runProcess, repository, releaseId, contract, inventory) {
+  const draft = releaseById(runProcess, repository, releaseId);
+  validateDraftRelease(draft, contract);
+  verifyRemoteAssetInventory(inventory, draft.assets);
+  return draft;
+}
+
+async function waitForDraftInventory({ runProcess, repository, releaseId, contract, inventory, pause }) {
+  let lastError;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    try {
+      return verifyDraftInventory(runProcess, repository, releaseId, contract, inventory);
+    } catch (error) {
+      lastError = error;
+      if (attempt < 9) await pause(Math.min(2 ** attempt, 10) * 1000);
+    }
+  }
+  throw lastError;
+}
+
+function verifyPublishedState(runProcess, repository, releaseId, contract, inventory, requireLatest) {
+  const published = releaseById(runProcess, repository, releaseId);
+  validatePublishedRelease(published, contract);
+  verifyRemoteAssetInventory(inventory, published.assets);
+  requireRemoteTag(runProcess, repository, contract.tag, contract.sourceCommit, "published-release verification");
+  if (requireLatest) {
+    const latest = githubJson(runProcess, `repos/${repository}/releases/latest`);
+    assert.equal(latest.id, releaseId, `Published release ${contract.tag} is not the latest release.`);
+    assert.equal(latest.tag_name, contract.tag, "GitHub latest release points to the wrong tag.");
+  }
+  return published;
+}
+
+async function waitForPublishedState({
+  runProcess,
+  repository,
+  releaseId,
+  contract,
+  inventory,
+  pause,
+}) {
+  let lastError;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    try {
+      return verifyPublishedState(runProcess, repository, releaseId, contract, inventory, true);
+    } catch (error) {
+      lastError = error;
+      if (attempt < 9) await pause(Math.min(2 ** attempt, 10) * 1000);
+    }
+  }
+  throw lastError;
+}
+
 export async function publishRelease({
+  root = repositoryRoot,
   directory,
   tag,
   repository,
   metadata,
+  sourceCommit,
+  eventName = process.env.GITHUB_EVENT_NAME,
+  refType = process.env.GITHUB_REF_TYPE,
+  publicationAuthorized = process.env.RELEASE_PUBLICATION_ENABLED === "true"
+    && ["LICENSE", "LICENSE.md", "LICENSE.txt"].some((name) => existsSync(resolve(root, name))),
   runProcess = defaultRunProcess,
+  pause = (milliseconds) => new Promise((resolvePromise) => setTimeout(resolvePromise, milliseconds)),
 }) {
+  assert.equal(publicationAuthorized, true, "Release publication is disabled until the project has an approved license.");
+  assert.equal(eventName, "push", "Release publication requires a trusted tag-push event.");
+  assert.equal(refType, "tag", "Release publication requires a trusted tag-push event.");
   assert.match(repository, repositoryPattern, "GitHub repository must use owner/name form.");
+  assert.match(sourceCommit, sourceCommitPattern, "Source commit must be a lowercase 40-character SHA.");
   assert.equal(tag, `v${metadata.version}`, "Publication tag does not match the release version.");
-  const sourceCommit = (await readFile(resolve(directory, "SOURCE_COMMIT"), "utf8")).trim();
+  const bundledSource = (await readFile(resolve(directory, "SOURCE_COMMIT"), "utf8")).trim();
+  assert.equal(bundledSource, sourceCommit, "Release bundle source commit does not match the trusted workflow commit.");
   await validateReleaseBundle({ directory, metadata, sourceCommit });
   const inventory = await buildFileInventory(directory);
-  const assetPaths = inventory.map(({ name }) => resolve(directory, name));
+  const contract = await releaseContract({ root, metadata, tag, sourceCommit, inventory });
 
-  runProcess(
-    "gh",
-    [
-      "release",
-      "create",
-      tag,
-      ...assetPaths,
-      "--repo",
+  let release = listReleaseForTag(runProcess, repository, tag);
+  if (release?.draft === false) {
+    return verifyPublishedState(runProcess, repository, release.id, contract, inventory, false);
+  }
+
+  if (release) {
+    validateDraftRelease(release, contract);
+    requireRemoteTag(runProcess, repository, tag, sourceCommit, "draft recovery");
+  } else {
+    requireRemoteSourceBinding(runProcess, repository, tag, sourceCommit);
+    release = createDraftRelease(runProcess, repository, contract);
+  }
+
+  release = resetDraftAssets(runProcess, repository, release, contract);
+  uploadReleaseAssets(runProcess, repository, tag, inventory, directory);
+  await waitForDraftInventory({
+    runProcess,
+    repository,
+    releaseId: release.id,
+    contract,
+    inventory,
+    pause,
+  });
+  requireRemoteTag(runProcess, repository, tag, sourceCommit, "draft inventory verification");
+  requireRemoteSourceBinding(runProcess, repository, tag, sourceCommit);
+  verifyDraftInventory(runProcess, repository, release.id, contract, inventory);
+  requireRemoteTag(runProcess, repository, tag, sourceCommit, "final pre-publication verification");
+
+  let transition;
+  try {
+    transition = githubJson(
+      runProcess,
+      `repos/${repository}/releases/${release.id}`,
+      ["--method", "PATCH", "-F", "draft=false", "-f", "make_latest=true"],
+    );
+  } catch (transitionError) {
+    const reconciled = releaseById(runProcess, repository, release.id);
+    if (reconciled.draft !== false) throw transitionError;
+    transition = reconciled;
+  }
+  assert.equal(transition.id, release.id, "GitHub returned a different release during publication.");
+  assert.equal(transition.draft, false, `GitHub did not publish release ${tag}.`);
+
+  try {
+    return await waitForPublishedState({
+      runProcess,
       repository,
-      "--draft",
-      "--verify-tag",
-      "--title",
-      `IntegraDraw ${metadata.version}`,
-      "--generate-notes",
-    ],
-    { capture: true },
-  );
-  const response = runProcess(
-    "gh",
-    ["api", `repos/${repository}/releases/tags/${tag}`],
-    { capture: true },
-  );
-  const remoteRelease = JSON.parse(response.stdout);
-  assert.equal(remoteRelease.draft, true, "GitHub Release must remain a draft during verification.");
-  assert.equal(remoteRelease.tag_name, tag, "GitHub Release returned the wrong tag.");
-  verifyRemoteAssetInventory(inventory, remoteRelease.assets);
-  runProcess("gh", ["release", "edit", tag, "--repo", repository, "--draft=false"], { capture: true });
+      releaseId: release.id,
+      contract,
+      inventory,
+      pause,
+    });
+  } catch (error) {
+    throw new Error(
+      `Immutable release ${tag} was published but final verification failed; manual review is required: ${error.message}`,
+      { cause: error },
+    );
+  }
 }
 
 export { defaultRunProcess };

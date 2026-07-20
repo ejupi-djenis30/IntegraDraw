@@ -16,17 +16,20 @@ permissions:
   contents: read
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'push' && github.ref_type == 'tag' && 'tags' || github.ref }}
   cancel-in-progress: false
 
 env:
   NODE_VERSION: "24.18.0"
   JAVA_VERSION: "17.0.19+10"
+  GH_CLI_VERSION: "2.94.0"
+  GH_CLI_SHA256: "a757f1ba6db18f4de8cbadb244843a5f89bc75b5e7c6fc127d2bd77fbd12ed62"
+  RELEASE_PUBLICATION_ENABLED: "false"
 
 jobs:
   build:
     name: Build and verify release candidate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     outputs:
       version: ${{ steps.candidate.outputs.version }}
@@ -78,7 +81,7 @@ jobs:
   security:
     name: Candidate vulnerability gate
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - name: Check out repository
@@ -112,7 +115,7 @@ jobs:
         working-directory: web
         run: npm audit --audit-level=high
 
-      - name: Scan source and candidate with Trivy
+      - name: Scan source dependency manifests with Trivy
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
@@ -122,12 +125,36 @@ jobs:
           format: table
           exit-code: "1"
           ignore-unfixed: true
-          severity: HIGH,CRITICAL
+          severity: MEDIUM,HIGH,CRITICAL
+
+      - name: Scan exact Java candidate SBOM with Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: sbom
+          scan-ref: release/integradraw-java-${{ needs.build.outputs.version }}.cdx.json
+          scanners: vuln
+          vuln-type: library
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: MEDIUM,HIGH,CRITICAL
+
+      - name: Scan exact web candidate SBOM with Trivy
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: sbom
+          scan-ref: release/integradraw-web-${{ needs.build.outputs.version }}.cdx.json
+          scanners: vuln
+          vuln-type: library
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: MEDIUM,HIGH,CRITICAL
 
   reproducibility:
     name: Independent reproducibility gate
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - name: Check out repository
@@ -186,7 +213,7 @@ jobs:
       - build
       - security
       - reproducibility
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: write
@@ -204,6 +231,33 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
+
+      - name: Enforce release authorization gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${RELEASE_PUBLICATION_ENABLED}" == "true" ]] || {
+            echo "Release publication remains disabled until the maintainers approve and add a project license." >&2
+            exit 1
+          }
+          compgen -G 'LICENSE*' > /dev/null || {
+            echo "Release publication requires a checked-in LICENSE file." >&2
+            exit 1
+          }
+
+      - name: Install checksummed GitHub CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="gh_${GH_CLI_VERSION}_linux_amd64.tar.gz"
+          curl --fail --location --proto '=https' --tlsv1.2 \
+            --output "${RUNNER_TEMP}/${archive}" \
+            "https://github.com/cli/cli/releases/download/v${GH_CLI_VERSION}/${archive}"
+          printf '%s  %s\n' "${GH_CLI_SHA256}" "${RUNNER_TEMP}/${archive}" | sha256sum --check --strict
+          tar --extract --gzip --file "${RUNNER_TEMP}/${archive}" --directory "${RUNNER_TEMP}"
+          gh_directory="${RUNNER_TEMP}/gh_${GH_CLI_VERSION}_linux_amd64/bin"
+          [[ "$("${gh_directory}/gh" --version | head -n 1)" == "gh version ${GH_CLI_VERSION} (2026-06-10)" ]]
+          printf '%s\n' "${gh_directory}" >> "${GITHUB_PATH}"
 
       - name: Download gated release candidate
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -223,7 +277,31 @@ jobs:
         with:
           subject-checksums: release/SHA256SUMS
 
-      - name: Verify draft inventory and publish release
+      - name: Attest checksum manifest
+        uses: actions/attest@f7c74d28b9d84cb8768d0b8ca14a4bac6ef463e6 # v4.2.0
+        with:
+          subject-path: release/SHA256SUMS
+
+      - name: Verify release provenance before publication
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mapfile -d '' assets < <(find release -maxdepth 1 -type f -print0 | sort -z)
+          (( ${#assets[@]} > 0 ))
+          for asset in "${assets[@]}"; do
+            gh attestation verify "${asset}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/release.yml" \
+              --source-digest "${GITHUB_SHA}" \
+              --source-ref "${GITHUB_REF}" \
+              --predicate-type "https://slsa.dev/provenance/v1" \
+              --cert-oidc-issuer "https://token.actions.githubusercontent.com" \
+              --deny-self-hosted-runners
+          done
+
+      - name: Recover, verify, and publish the immutable release
         env:
           GH_TOKEN: ${{ github.token }}
         run: >-

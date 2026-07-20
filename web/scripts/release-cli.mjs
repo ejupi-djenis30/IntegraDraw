@@ -114,6 +114,7 @@ async function run(argv) {
     tag,
     repository: requireOption(options, "--repository"),
     metadata,
+    sourceCommit,
   });
   console.log(`IntegraDraw ${metadata.version} GitHub Release published.`);
 }

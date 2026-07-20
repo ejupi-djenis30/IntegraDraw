@@ -55,7 +55,7 @@ It does not use `eval` or `Function`.
 
 ## Desktop application
 
-Requirements: JDK 17+ and Maven 3.9+.
+Requirements: JDK 17 and Maven 3.9.16. The included Maven wrapper supplies the exact Maven version.
 
 ```bash
 ./mvnw clean verify
@@ -116,13 +116,13 @@ Before a tag can publish, the workflow requires:
 - pinned Temurin 17, Node.js and Maven toolchains;
 - Java tests, packaging, manifest inspection and a real `java -jar … --version` smoke test;
 - web typechecking, tests, validation and a production build;
-- semantic ZIP, CycloneDX and dependency-graph validation;
-- normalized Java and web CycloneDX SBOMs plus dependency inventories;
+- semantic ZIP, CycloneDX and complete dependency-graph validation;
+- normalized Java and web CycloneDX SBOMs reconciled exactly with independently generated dependency inventories;
 - one source-commit record and one consolidated, verified `SHA256SUMS` file.
 
-Two separate jobs then gate publication. The vulnerability job audits the npm lock and scans the checked-out source plus the exact candidate with Trivy. The reproducibility job starts from another clean checkout, rebuilds the JAR, static ZIP and normalized SBOMs, and compares the entire candidate byte for byte.
+Two separate jobs then gate publication. The vulnerability job audits the npm lock and scans the source manifests plus both exact candidate SBOMs with Trivy, failing on medium, high or critical findings. The reproducibility job starts from another clean checkout, rebuilds the JAR, static ZIP and normalized SBOMs, and compares the entire candidate byte for byte.
 
-Only a tag run that passes both gates can reach publication. The tag-only job attests every checksummed asset through GitHub's artifact-attestation service. A tested Node.js publisher uploads the candidate to a draft GitHub Release, verifies every remote name, size and digest, and makes the release public only after the inventory matches. Existing releases are never overwritten.
+Only a tag run that passes both gates can reach publication. The tag-only job attests every asset, including `SHA256SUMS`, and independently verifies the signer, workflow, commit, ref, predicate and GitHub-hosted runner before upload. The publisher keeps one contract-bound draft that can survive an interrupted run, verifies the protected tag and default-branch ancestry again, compares every remote name, size and digest, then confirms the public release is immutable and latest. Reruns accept only that exact draft or the exact immutable release; they never overwrite a published release.
 
 Run the metadata and bundle-validator tests locally with:
 
@@ -134,7 +134,7 @@ npm run check
 
 The release validator, deterministic ZIP writer, artifact parsers, inventory comparison and publication state machine are dependency-free Node.js modules covered by negative tests. The Maven wrapper pins Maven 3.9.16 and verifies the downloaded distribution checksum.
 
-No release tag is created by repository automation. A maintainer must review the candidate workflow, update the changelog and deliberately push the matching tag.
+No release tag is created by repository automation. Publication is currently fail-closed because the project has no agreed license: the workflow and publisher both require an explicit enablement plus a checked-in license. After the original contributors agree, a maintainer must review that change, update the changelog and deliberately push the matching tag.
 
 ## Product demo
 
