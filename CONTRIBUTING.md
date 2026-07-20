@@ -3,6 +3,8 @@
 Thanks for helping make numerical integration easier to inspect. Focused changes with a clear
 mathematical or usability benefit are the easiest to review.
 
+By participating, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## Set up the project
 
 The desktop app requires Java 17 and Maven 3.9 or newer:
