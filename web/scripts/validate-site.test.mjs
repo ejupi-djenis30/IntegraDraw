@@ -3,7 +3,11 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
 import { pathToFileURL } from "node:url";
-import { readRequiredFile, validateMobileHeaderLinkTarget } from "./validate-site.mjs";
+import {
+  readRequiredFile,
+  validateFailOpenRevealStyles,
+  validateMobileHeaderLinkTarget,
+} from "./validate-site.mjs";
 
 const temporaryDirectories = [];
 
@@ -75,5 +79,40 @@ describe("mobile header accessibility", () => {
     `;
 
     expect(() => validateMobileHeaderLinkTarget(styles)).toThrow(/at least 44px tall/);
+  });
+});
+
+describe("fail-open reveal styles", () => {
+  const enhancedStyles = `
+    .reveal {
+      opacity: 1;
+      transform: none;
+    }
+
+    :where(.reveal-enabled) .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+
+    :where(.reveal-enabled) .reveal.is-visible {
+      opacity: 1;
+      transform: none;
+    }
+  `;
+
+  it("accepts a progressively enhanced reveal contract", () => {
+    expect(() => validateFailOpenRevealStyles(enhancedStyles)).not.toThrow();
+  });
+
+  it("rejects content hidden before JavaScript initializes", () => {
+    const hiddenByDefault = enhancedStyles.replace("opacity: 1;", "opacity: 0;");
+
+    expect(() => validateFailOpenRevealStyles(hiddenByDefault)).toThrow(/visible before JavaScript/);
+  });
+
+  it("rejects an unscoped animated state", () => {
+    const unscoped = enhancedStyles.replace(":where(.reveal-enabled) .reveal {", ".reveal {");
+
+    expect(() => validateFailOpenRevealStyles(unscoped)).toThrow(/progressive enhancement/);
   });
 });

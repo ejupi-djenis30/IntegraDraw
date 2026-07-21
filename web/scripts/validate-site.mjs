@@ -35,6 +35,21 @@ export function validateMobileHeaderLinkTarget(styles) {
   assert.match(declarations, /align-items:\s*center\s*;/, "Mobile Source link text must remain vertically centred.");
 }
 
+export function validateFailOpenRevealStyles(styles) {
+  const defaultReveal = styles.match(/^\s*\.reveal\s*\{([^}]*)\}/m);
+  assert.ok(defaultReveal, "CSS must define a default .reveal rule.");
+  assert.match(defaultReveal[1], /opacity:\s*1\s*;/, "Reveal content must be visible before JavaScript runs.");
+  assert.match(defaultReveal[1], /transform:\s*none\s*;/, "Reveal content must keep its layout before JavaScript runs.");
+
+  const enhancedReveal = styles.match(/:where\(\.reveal-enabled\)\s+\.reveal\s*\{([^}]*)\}/);
+  assert.ok(enhancedReveal, "CSS must scope the hidden reveal state to progressive enhancement.");
+  assert.match(enhancedReveal[1], /opacity:\s*0\s*;/, "Enhanced reveal content must retain the entrance animation.");
+
+  const visibleReveal = styles.match(/:where\(\.reveal-enabled\)\s+\.reveal\.is-visible\s*\{([^}]*)\}/);
+  assert.ok(visibleReveal, "CSS must expose observed reveal content.");
+  assert.match(visibleReveal[1], /opacity:\s*1\s*;/, "Observed reveal content must become visible.");
+}
+
 async function readRequiredText(fileUrl, label) {
   return (await readRequiredFile(fileUrl, label)).toString("utf8");
 }
@@ -68,6 +83,7 @@ export async function validateSite(siteRoot = root) {
 
   assert.ok(config.includes('base: "/IntegraDraw/"'), "Vite must retain the project Pages base path.");
   validateMobileHeaderLinkTarget(styles);
+  validateFailOpenRevealStyles(styles);
 
   const socialPreview = await readRequiredFile(
     new URL("public/social-preview.png", siteRoot),

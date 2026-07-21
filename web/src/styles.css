@@ -811,12 +811,17 @@ footer > a:last-child {
 }
 
 .reveal {
+  opacity: 1;
+  transform: none;
+}
+
+:where(.reveal-enabled) .reveal {
   opacity: 0;
   transform: translateY(24px);
   transition: opacity 700ms ease, transform 700ms cubic-bezier(.2, .8, .2, 1);
 }
 
-.reveal.is-visible {
+:where(.reveal-enabled) .reveal.is-visible {
   opacity: 1;
   transform: none;
 }
