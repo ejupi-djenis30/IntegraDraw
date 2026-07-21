@@ -3,7 +3,7 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
 import { pathToFileURL } from "node:url";
-import { readRequiredFile } from "./validate-site.mjs";
+import { readRequiredFile, validateMobileHeaderLinkTarget } from "./validate-site.mjs";
 
 const temporaryDirectories = [];
 
@@ -44,5 +44,36 @@ describe("site validator file reads", () => {
     await mkdir(directoryUrl);
 
     await expect(readRequiredFile(directoryUrl, "not-a-file")).rejects.toMatchObject({ code: "EISDIR" });
+  });
+});
+
+describe("mobile header accessibility", () => {
+  it("accepts a visually compact 44px Source target", () => {
+    const styles = `
+      @media (max-width: 560px) {
+        .header-link {
+          display: inline-flex;
+          min-height: 44px;
+          align-items: center;
+          font-size: 0.68rem;
+        }
+      }
+    `;
+
+    expect(() => validateMobileHeaderLinkTarget(styles)).not.toThrow();
+  });
+
+  it("rejects an undersized Source target", () => {
+    const styles = `
+      @media (max-width: 560px) {
+        .header-link {
+          display: inline-flex;
+          min-height: 24px;
+          align-items: center;
+        }
+      }
+    `;
+
+    expect(() => validateMobileHeaderLinkTarget(styles)).toThrow(/at least 44px tall/);
   });
 });
