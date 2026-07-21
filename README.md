@@ -168,9 +168,10 @@ privately through [SECURITY.md](SECURITY.md), not through a public issue.
 
 IntegraDraw started as a collaborative school project in 2023.
 
-- **Djenis Ejupi** — original implementation and current modernization.
-- **Project contributors** — original Java implementation and UI/mathematics contributions.
+- **Original contributors** — 2023 Java prototype, interface and mathematics.
+- **Project maintainers** — current desktop, web and release modernization.
 
 The legacy IntelliJ `.form` file remains in the repository as a record of the original interface. The current runtime no longer depends on it, and earlier work is credited collectively.
 
-IntegraDraw is available under the [MIT License](LICENSE). Copyright remains with Djenis Ejupi and project contributors.
+IntegraDraw is available under the [MIT License](LICENSE). Copyright belongs to Ejupi Labs and
+IntegraDraw contributors.
