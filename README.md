@@ -53,6 +53,24 @@ sin cos tan exp ln log sqrt abs
 
 It does not use `eval` or `Function`.
 
+## Install the latest desktop release
+
+Install a Java 17 runtime, download `integradraw-<version>.jar` from the
+[latest release](https://github.com/ejupi-djenis30/IntegraDraw/releases/latest), then run:
+
+```bash
+java -jar integradraw-<version>.jar
+```
+
+Download `SHA256SUMS` from the same release to check the file digest. You can also verify the
+GitHub build attestation before opening it:
+
+```bash
+gh attestation verify integradraw-<version>.jar --repo ejupi-djenis30/IntegraDraw
+```
+
+The release also includes a self-contained web ZIP and CycloneDX SBOMs for both implementations.
+
 ## Desktop application
 
 Requirements: JDK 17 and Maven 3.9.16. The included Maven wrapper supplies the exact Maven version.
@@ -132,7 +150,10 @@ npm run check
 
 The release validator, deterministic ZIP writer, artifact parsers, inventory comparison and publication state machine are dependency-free Node.js modules covered by negative tests. The Maven wrapper pins Maven 3.9.16 and verifies the downloaded distribution checksum.
 
-No release tag is created by repository automation. The original contributors approved the MIT License, so publication is enabled; the workflow still verifies the exact license text before it can publish. A maintainer must create a signed `v1.1.1` tag on the reviewed default-branch commit to start the trusted release path.
+Repository automation never creates release tags. The original contributors approved the MIT
+License, so publication is enabled; the workflow still verifies the exact license text before it
+can publish. To publish a future version, a maintainer creates a signed `v<version>` tag on the
+reviewed default-branch commit after the version and changelog have been updated.
 
 ## Contributing and security
 
