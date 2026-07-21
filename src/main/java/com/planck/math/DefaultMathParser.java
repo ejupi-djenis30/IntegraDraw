@@ -47,7 +47,11 @@ public final class DefaultMathParser {
             }
             return result;
         } catch (RuntimeException exception) {
-            throw new IllegalArgumentException("The function cannot be evaluated at x = " + variableValue + ".", exception);
+            throw new NumericalException(
+                    NumericalException.Category.EVALUATION,
+                    "The function cannot be evaluated at x = " + variableValue + ".",
+                    exception
+            );
         } finally {
             evaluator.clearVariables();
         }

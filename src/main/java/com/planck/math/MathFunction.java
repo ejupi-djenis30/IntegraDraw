@@ -11,6 +11,8 @@ public final class MathFunction {
     private static final int MAX_EXPRESSION_LENGTH = 160;
     private static final int MAX_SAMPLE_COUNT = 100_000;
     private static final double MAX_INTERVAL_WIDTH = 10_000.0;
+    static final int REFERENCE_SEGMENTS = 1_024;
+    static final int MAX_APPROXIMATION_SEGMENTS = 1_000;
 
     private final String source;
     private final String variable;
@@ -21,13 +23,19 @@ public final class MathFunction {
     public MathFunction(String source, String variable) {
         String cleanSource = source == null ? "" : source.trim();
         if (cleanSource.isEmpty()) {
-            throw new IllegalArgumentException("Enter a function before calculating.");
+            throw new NumericalException(
+                    NumericalException.Category.EXPRESSION,
+                    "Enter a function before calculating."
+            );
         }
         if (cleanSource.length() > MAX_EXPRESSION_LENGTH || !SAFE_EXPRESSION.matcher(cleanSource).matches()) {
-            throw new IllegalArgumentException("Use a short mathematical expression with numbers, x, operators and functions.");
+            throw new NumericalException(
+                    NumericalException.Category.EXPRESSION,
+                    "Use a short mathematical expression with numbers, x, operators and functions."
+            );
         }
         if (variable == null || !variable.matches("[A-Za-z][A-Za-z0-9_]*")) {
-            throw new IllegalArgumentException("The variable name is invalid.");
+            throw new NumericalException(NumericalException.Category.EXPRESSION, "The variable name is invalid.");
         }
 
         this.source = cleanSource;
@@ -38,7 +46,11 @@ public final class MathFunction {
             this.integral = parser.integralFunction(cleanSource, variable);
             this.derivative = parser.derivativeFunction(cleanSource, variable);
         } catch (RuntimeException exception) {
-            throw new IllegalArgumentException("The formula could not be parsed. Try Sin(x), x^2 or Exp(-x^2).", exception);
+            throw new NumericalException(
+                    NumericalException.Category.EXPRESSION,
+                    "The formula could not be parsed. Try Sin(x), x^2 or Exp(-x^2).",
+                    exception
+            );
         }
     }
 
@@ -49,11 +61,17 @@ public final class MathFunction {
     public List<Double> getValuesGivenInterval(double lower, double higher, double step) {
         validateInterval(lower, higher);
         if (!Double.isFinite(step) || step <= 0) {
-            throw new IllegalArgumentException("The sampling step must be positive.");
+            throw new NumericalException(
+                    NumericalException.Category.SEGMENTS,
+                    "The sampling step must be positive."
+            );
         }
         long requestedSampleCount = Math.max(1L, (long) Math.ceil((higher - lower) / step));
         if (requestedSampleCount > MAX_SAMPLE_COUNT) {
-            throw new IllegalArgumentException("The requested sample contains too many points.");
+            throw new NumericalException(
+                    NumericalException.Category.SEGMENTS,
+                    "The requested sample contains too many points."
+            );
         }
         int sampleCount = Math.toIntExact(requestedSampleCount);
 
@@ -94,7 +112,7 @@ public final class MathFunction {
 
     public double referenceIntegral(double lower, double higher) {
         validateInterval(lower, higher);
-        int slices = 1_024;
+        int slices = REFERENCE_SEGMENTS;
         double width = (higher - lower) / slices;
         double sum = valueAt(lower) + valueAt(higher);
         for (int index = 1; index < slices; index++) {
@@ -133,20 +151,29 @@ public final class MathFunction {
 
     private static void validateApproximation(double lower, double higher, int segments) {
         validateInterval(lower, higher);
-        if (segments < 1 || segments > 1_000) {
-            throw new IllegalArgumentException("Choose between 1 and 1,000 segments.");
+        if (segments < 1 || segments > MAX_APPROXIMATION_SEGMENTS) {
+            throw new NumericalException(
+                    NumericalException.Category.SEGMENTS,
+                    "Choose between 1 and 1,000 segments."
+            );
         }
     }
 
     private static void validateInterval(double lower, double higher) {
         if (!Double.isFinite(lower) || !Double.isFinite(higher)) {
-            throw new IllegalArgumentException("Interval bounds must be finite.");
+            throw new NumericalException(NumericalException.Category.BOUNDS, "Interval bounds must be finite.");
         }
         if (lower >= higher) {
-            throw new IllegalArgumentException("The lower bound must be smaller than the upper bound.");
+            throw new NumericalException(
+                    NumericalException.Category.BOUNDS,
+                    "The lower bound must be smaller than the upper bound."
+            );
         }
         if (higher - lower > MAX_INTERVAL_WIDTH) {
-            throw new IllegalArgumentException("Keep the interval width below 10,000.");
+            throw new NumericalException(
+                    NumericalException.Category.BOUNDS,
+                    "Keep the interval width below 10,000."
+            );
         }
     }
 }
