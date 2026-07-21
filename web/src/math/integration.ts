@@ -1,4 +1,4 @@
-import type { CompiledExpression } from "./expression";
+import { NumericalRangeError, type CompiledExpression } from "./expression";
 
 export interface IntegralResult {
   readonly midpoint: number;
@@ -26,7 +26,8 @@ export interface ApproximationGeometry {
   readonly trapezoids: readonly TrapezoidSlice[];
 }
 
-const REFERENCE_SEGMENTS = 8_192;
+export const REFERENCE_SEGMENTS = 8_192;
+export const MAX_APPROXIMATION_SEGMENTS = 500;
 
 export function analyzeIntegral(
   expression: CompiledExpression,
@@ -86,10 +87,10 @@ export function simpsonReference(
   segments = REFERENCE_SEGMENTS,
 ): number {
   if (!Number.isInteger(segments) || segments < 2 || segments % 2 !== 0) {
-    throw new RangeError("Simpson’s rule needs a positive, even segment count.");
+    throw new NumericalRangeError("segments", "Simpson’s rule needs a positive, even segment count.");
   }
   if (!Number.isFinite(lower) || !Number.isFinite(upper) || lower >= upper) {
-    throw new RangeError("The lower bound must be smaller than the upper bound.");
+    throw new NumericalRangeError("bounds", "The lower bound must be smaller than the upper bound.");
   }
 
   const width = (upper - lower) / segments;
@@ -102,15 +103,15 @@ export function simpsonReference(
 
 export function validateInputs(lower: number, upper: number, segments: number): void {
   if (!Number.isFinite(lower) || !Number.isFinite(upper)) {
-    throw new RangeError("Interval bounds must be finite numbers.");
+    throw new NumericalRangeError("bounds", "Interval bounds must be finite numbers.");
   }
   if (lower >= upper) {
-    throw new RangeError("The lower bound must be smaller than the upper bound.");
+    throw new NumericalRangeError("bounds", "The lower bound must be smaller than the upper bound.");
   }
   if (upper - lower > 10_000) {
-    throw new RangeError("Keep the interval width below 10,000.");
+    throw new NumericalRangeError("bounds", "Keep the interval width below 10,000.");
   }
-  if (!Number.isInteger(segments) || segments < 1 || segments > 500) {
-    throw new RangeError("Choose between 1 and 500 segments.");
+  if (!Number.isInteger(segments) || segments < 1 || segments > MAX_APPROXIMATION_SEGMENTS) {
+    throw new NumericalRangeError("segments", "Choose between 1 and 500 segments.");
   }
 }
