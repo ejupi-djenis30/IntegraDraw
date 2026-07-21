@@ -3,6 +3,9 @@ import "./styles.css";
 import { compileExpression } from "./math/expression";
 import { analyzeIntegral } from "./math/integration";
 import { PlotView } from "./plot";
+import { installRevealObserver } from "./reveal";
+
+installRevealObserver();
 
 interface Preset {
   readonly formula: string;
@@ -60,7 +63,6 @@ element<HTMLButtonElement>("zoom-in").addEventListener("click", () => plot.zoomI
 element<HTMLButtonElement>("zoom-out").addEventListener("click", () => plot.zoomOut());
 element<HTMLButtonElement>("zoom-reset").addEventListener("click", () => plot.resetZoom());
 
-installRevealObserver();
 update();
 
 function scheduleUpdate(): void {
@@ -120,26 +122,6 @@ function markInvalidInput(lower: number, upper: number, segments: number): void 
   if (!Number.isInteger(segments) || segments < 1 || segments > 500) {
     segmentInput.setAttribute("aria-invalid", "true");
   }
-}
-
-function installRevealObserver(): void {
-  const items = document.querySelectorAll<HTMLElement>(".reveal");
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) {
-    for (const item of items) item.classList.add("is-visible");
-    return;
-  }
-  const observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
-          observer.unobserve(entry.target);
-        }
-      }
-    },
-    { threshold: 0.12 },
-  );
-  for (const item of items) observer.observe(item);
 }
 
 function element<T extends HTMLElement>(id: string): T {
