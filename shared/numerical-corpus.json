@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 1,
+  "implementations": {
+    "java": {
+      "formulaDialect": "Symja 3.2",
+      "referenceRule": "composite Simpson",
+      "referenceSegments": 1024,
+      "maximumSegments": 1000
+    },
+    "typescript": {
+      "formulaDialect": "IntegraDraw expression parser",
+      "referenceRule": "composite Simpson",
+      "referenceSegments": 8192,
+      "maximumSegments": 500
+    }
+  },
+  "integrals": [
+    {
+      "id": "constant-across-offset-bounds",
+      "formula": "3",
+      "lower": -2.0,
+      "upper": 5.0,
+      "segments": 7,
+      "expected": {
+        "signedArea": 21.0,
+        "midpoint": {
+          "java": 21.0,
+          "typescript": 21.0
+        },
+        "trapezoidal": {
+          "java": 21.0,
+          "typescript": 21.0
+        },
+        "reference": {
+          "java": 21.0,
+          "typescript": 21.0
+        }
+      },
+      "tolerances": {
+        "midpoint": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        },
+        "trapezoidal": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        },
+        "reference": {
+          "java": 1e-10,
+          "typescript": 1e-12
+        },
+        "signedArea": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        }
+      }
+    },
+    {
+      "id": "negative-linear-signed-area",
+      "formula": "-x",
+      "lower": 0.0,
+      "upper": 1.0,
+      "segments": 20,
+      "expected": {
+        "signedArea": -0.5,
+        "midpoint": {
+          "java": -0.5,
+          "typescript": -0.5
+        },
+        "trapezoidal": {
+          "java": -0.5,
+          "typescript": -0.5
+        },
+        "reference": {
+          "java": -0.5,
+          "typescript": -0.5
+        }
+      },
+      "tolerances": {
+        "midpoint": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        },
+        "trapezoidal": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        },
+        "reference": {
+          "java": 1e-10,
+          "typescript": 1e-12
+        },
+        "signedArea": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        }
+      }
+    },
+    {
+      "id": "quadratic-unit-interval",
+      "formula": "x^2",
+      "lower": 0.0,
+      "upper": 1.0,
+      "segments": 12,
+      "expected": {
+        "signedArea": 0.3333333333333333,
+        "midpoint": {
+          "java": 0.3327546296296296,
+          "typescript": 0.3327546296296296
+        },
+        "trapezoidal": {
+          "java": 0.3344907407407407,
+          "typescript": 0.3344907407407407
+        },
+        "reference": {
+          "java": 0.3333333333333333,
+          "typescript": 0.3333333333333333
+        }
+      },
+      "tolerances": {
+        "midpoint": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        },
+        "trapezoidal": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        },
+        "reference": {
+          "java": 1e-10,
+          "typescript": 1e-12
+        },
+        "signedArea": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        }
+      }
+    },
+    {
+      "id": "sine-over-half-turn",
+      "formula": "Sin(x)",
+      "lower": 0.0,
+      "upper": 3.141592653589793,
+      "segments": 64,
+      "expected": {
+        "signedArea": 2.0,
+        "midpoint": {
+          "java": 2.000200811728367,
+          "typescript": 2.000200811728367
+        },
+        "trapezoidal": {
+          "java": 1.9995983886400375,
+          "typescript": 1.9995983886400375
+        },
+        "reference": {
+          "java": 2.0000000000009845,
+          "typescript": 2.0000000000000004
+        }
+      },
+      "tolerances": {
+        "midpoint": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        },
+        "trapezoidal": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        },
+        "reference": {
+          "java": 1e-10,
+          "typescript": 1e-12
+        },
+        "signedArea": {
+          "java": 2e-12,
+          "typescript": 1e-12
+        }
+      }
+    },
+    {
+      "id": "square-root-reference-resolution",
+      "formula": "Sqrt(x)",
+      "lower": 0.0,
+      "upper": 4.0,
+      "segments": 32,
+      "expected": {
+        "signedArea": 5.333333333333333,
+        "midpoint": {
+          "java": 5.335861491824577,
+          "typescript": 5.335861491824577
+        },
+        "trapezoidal": {
+          "java": 5.324471490231534,
+          "typescript": 5.324471490231534
+        },
+        "reference": {
+          "java": 5.333313512869292,
+          "typescript": 5.3333324573843
+        }
+      },
+      "tolerances": {
+        "midpoint": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        },
+        "trapezoidal": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        },
+        "reference": {
+          "java": 1e-10,
+          "typescript": 1e-12
+        },
+        "signedArea": {
+          "java": 2.1e-5,
+          "typescript": 1e-6
+        }
+      }
+    },
+    {
+      "id": "gaussian-bell",
+      "formula": "Exp(-x^2)",
+      "lower": -3.0,
+      "upper": 3.0,
+      "segments": 24,
+      "expected": {
+        "signedArea": 1.7724146965190422,
+        "midpoint": {
+          "java": 1.7724183494139734,
+          "typescript": 1.7724183494139734
+        },
+        "trapezoidal": {
+          "java": 1.7724072169604066,
+          "typescript": 1.7724072169604066
+        },
+        "reference": {
+          "java": 1.7724146965187515,
+          "typescript": 1.7724146965190422
+        }
+      },
+      "tolerances": {
+        "midpoint": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        },
+        "trapezoidal": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        },
+        "reference": {
+          "java": 1e-10,
+          "typescript": 1e-12
+        },
+        "signedArea": {
+          "java": 1e-12,
+          "typescript": 1e-12
+        }
+      }
+    }
+  ],
+  "invalidExpressions": [
+    {
+      "id": "empty-expression",
+      "formula": "",
+      "expectations": {
+        "java": { "outcome": "error", "category": "expression" },
+        "typescript": { "outcome": "error", "category": "expression" }
+      }
+    },
+    {
+      "id": "unsupported-statement-separator",
+      "formula": "x; quit",
+      "expectations": {
+        "java": { "outcome": "error", "category": "expression" },
+        "typescript": { "outcome": "error", "category": "expression" }
+      }
+    },
+    {
+      "id": "unclosed-function-call",
+      "formula": "Sin(x",
+      "expectations": {
+        "java": { "outcome": "error", "category": "expression" },
+        "typescript": { "outcome": "error", "category": "expression" }
+      }
+    }
+  ],
+  "validationCases": [
+    {
+      "id": "equal-bounds",
+      "formula": "x",
+      "lower": 1.0,
+      "upper": 1.0,
+      "segments": 10,
+      "expectations": {
+        "java": { "outcome": "error", "category": "bounds" },
+        "typescript": { "outcome": "error", "category": "bounds" }
+      }
+    },
+    {
+      "id": "reversed-bounds",
+      "formula": "x",
+      "lower": 1.0,
+      "upper": -1.0,
+      "segments": 10,
+      "expectations": {
+        "java": { "outcome": "error", "category": "bounds" },
+        "typescript": { "outcome": "error", "category": "bounds" }
+      }
+    },
+    {
+      "id": "interval-wider-than-limit",
+      "formula": "x",
+      "lower": -5001.0,
+      "upper": 5001.0,
+      "segments": 10,
+      "expectations": {
+        "java": { "outcome": "error", "category": "bounds" },
+        "typescript": { "outcome": "error", "category": "bounds" }
+      }
+    },
+    {
+      "id": "zero-segments",
+      "formula": "x",
+      "lower": 0.0,
+      "upper": 1.0,
+      "segments": 0,
+      "expectations": {
+        "java": { "outcome": "error", "category": "segments" },
+        "typescript": { "outcome": "error", "category": "segments" }
+      }
+    },
+    {
+      "id": "documented-runtime-segment-limit",
+      "formula": "x",
+      "lower": 0.0,
+      "upper": 1.0,
+      "segments": 750,
+      "expectations": {
+        "java": { "outcome": "valid", "category": "segments" },
+        "typescript": { "outcome": "error", "category": "segments" }
+      }
+    },
+    {
+      "id": "beyond-both-segment-limits",
+      "formula": "x",
+      "lower": 0.0,
+      "upper": 1.0,
+      "segments": 1001,
+      "expectations": {
+        "java": { "outcome": "error", "category": "segments" },
+        "typescript": { "outcome": "error", "category": "segments" }
+      }
+    },
+    {
+      "id": "non-finite-interior-value",
+      "formula": "1/x",
+      "lower": -1.0,
+      "upper": 1.0,
+      "segments": 10,
+      "expectations": {
+        "java": { "outcome": "error", "category": "evaluation" },
+        "typescript": { "outcome": "error", "category": "evaluation" }
+      }
+    }
+  ]
+}
