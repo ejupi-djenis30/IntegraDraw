@@ -5,6 +5,20 @@ export interface CompiledExpression {
   evaluate(x: number): number;
 }
 
+export type NumericalErrorCategory = "expression" | "bounds" | "segments" | "evaluation";
+
+export class NumericalRangeError extends RangeError {
+  readonly category: Exclude<NumericalErrorCategory, "expression">;
+  readonly code: Exclude<NumericalErrorCategory, "expression">;
+
+  constructor(category: Exclude<NumericalErrorCategory, "expression">, message: string) {
+    super(message);
+    this.name = "NumericalRangeError";
+    this.category = category;
+    this.code = category;
+  }
+}
+
 type Token =
   | { type: "number"; value: number; position: number }
   | { type: "identifier"; value: string; position: number }
@@ -32,6 +46,8 @@ const MAX_TOKENS = 256;
 
 export class ExpressionError extends Error {
   readonly position: number;
+  readonly category = "expression" as const;
+  readonly code = "expression" as const;
 
   constructor(message: string, position: number) {
     super(`${message} at character ${position + 1}.`);
@@ -56,7 +72,7 @@ export function compileExpression(source: string): CompiledExpression {
     evaluate(x: number): number {
       const value = evaluate(x);
       if (!Number.isFinite(value)) {
-        throw new RangeError(`The function is not finite at x = ${formatPoint(x)}.`);
+        throw new NumericalRangeError("evaluation", `The function is not finite at x = ${formatPoint(x)}.`);
       }
       return value;
     },

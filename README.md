@@ -89,6 +89,7 @@ IntegraDraw/
 ├── src/main/java/             Java desktop application
 │   └── com/planck/math/       Parsing and numerical methods
 ├── src/test/java/             JUnit regression tests
+├── shared/                    Cross-runtime golden numerical corpus
 ├── web/
 │   ├── src/math/              Dependency-free expression and integration core
 │   ├── src/plot.ts            Responsive Canvas renderer
@@ -97,7 +98,9 @@ IntegraDraw/
 └── .github/workflows/         Java/web CI and Pages deployment
 ```
 
-The Java and TypeScript implementations are separate on purpose. Their tests express the same invariants without coupling a browser build to the desktop runtime.
+The Java and TypeScript implementations are separate on purpose. JUnit and Vitest consume the
+same versioned [golden numerical corpus](shared/README.md), while runtime-specific numerical values,
+tolerances and limits remain explicit instead of being hidden behind loose equality checks.
 
 ## Mathematical scope
 
@@ -165,9 +168,10 @@ privately through [SECURITY.md](SECURITY.md), not through a public issue.
 
 IntegraDraw started as a collaborative school project in 2023.
 
-- **Djenis Ejupi** — original implementation and current modernization.
-- **Project contributors** — original Java implementation and UI/mathematics contributions.
+- **Original contributors** — 2023 Java prototype, interface and mathematics.
+- **Project maintainers** — current desktop, web and release modernization.
 
 The legacy IntelliJ `.form` file remains in the repository as a record of the original interface. The current runtime no longer depends on it, and earlier work is credited collectively.
 
-IntegraDraw is available under the [MIT License](LICENSE). Copyright remains with Djenis Ejupi and project contributors.
+IntegraDraw is available under the [MIT License](LICENSE). Copyright belongs to Ejupi Labs and
+IntegraDraw contributors.

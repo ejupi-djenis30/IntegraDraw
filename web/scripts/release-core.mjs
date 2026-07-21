@@ -25,7 +25,7 @@ const branchPattern = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._/-]+$/;
 const checksumLinePattern = /^([0-9a-f]{64})  ([^/\\]+)$/;
 const maxProcessBuffer = 16 * 1024 * 1024;
 const githubApiVersion = "2026-03-10";
-export const mitLicenseSha256 = "14e0793bcff8c18f65d309301c8dabc6e434750e3281fb07097f78d9951f95e0";
+export const mitLicenseSha256 = "ab5a03f40ec1558a092abb3b72d3a38fec26be6805831f8df7e6b00245b3063e";
 
 function compareText(left, right) {
   return left < right ? -1 : left > right ? 1 : 0;
