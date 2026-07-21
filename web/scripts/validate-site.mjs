@@ -23,6 +23,18 @@ export async function readRequiredFile(fileUrl, label) {
   }
 }
 
+export function validateMobileHeaderLinkTarget(styles) {
+  const mobileHeaderLink = styles.match(
+    /@media\s*\(max-width:\s*560px\)\s*\{[\s\S]*?\.header-link\s*\{([^}]*)\}/,
+  );
+  assert.ok(mobileHeaderLink, "Mobile CSS must define a .header-link rule at 560px.");
+
+  const declarations = mobileHeaderLink[1];
+  assert.match(declarations, /display:\s*inline-flex\s*;/, "Mobile Source link must expose a box target.");
+  assert.match(declarations, /min-height:\s*44px\s*;/, "Mobile Source link target must be at least 44px tall.");
+  assert.match(declarations, /align-items:\s*center\s*;/, "Mobile Source link text must remain vertically centred.");
+}
+
 async function readRequiredText(fileUrl, label) {
   return (await readRequiredFile(fileUrl, label)).toString("utf8");
 }
@@ -30,6 +42,7 @@ async function readRequiredText(fileUrl, label) {
 export async function validateSite(siteRoot = root) {
   const html = await readRequiredText(new URL("index.html", siteRoot), "index.html");
   const config = await readRequiredText(new URL("vite.config.ts", siteRoot), "vite.config.ts");
+  const styles = await readRequiredText(new URL("src/styles.css", siteRoot), "src/styles.css");
 
   for (const file of ["public/brand-mark.svg", "public/favicon.svg"]) {
     await readRequiredFile(new URL(file, siteRoot), file);
@@ -54,6 +67,7 @@ export async function validateSite(siteRoot = root) {
   }
 
   assert.ok(config.includes('base: "/IntegraDraw/"'), "Vite must retain the project Pages base path.");
+  validateMobileHeaderLinkTarget(styles);
 
   const socialPreview = await readRequiredFile(
     new URL("public/social-preview.png", siteRoot),
