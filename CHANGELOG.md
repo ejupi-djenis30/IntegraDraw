@@ -6,6 +6,13 @@ Notable changes to IntegraDraw are recorded here.
 
 - No unreleased changes.
 
+## 1.1.2 — 2026-07-23
+
+- Use one frozen numerical corpus in the Java application and the browser workbench, so both implementations prove the same limits, edge cases and expected results.
+- Keep the full page readable when JavaScript is unavailable or a reveal animation fails.
+- Improve release installation guidance, the mobile Source touch target and reduced-motion behaviour.
+- Remove the last horizontal overflow from the 320 px mobile layout.
+
 ## 1.1.1 — 2026-07-20
 
 - Credit shared work collectively without publishing individual contributor identities.

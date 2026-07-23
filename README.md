@@ -55,18 +55,18 @@ It does not use `eval` or `Function`.
 
 ## Install the latest desktop release
 
-Install a Java 17 runtime, download `integradraw-<version>.jar` from the
+Install a Java 17 runtime, download `integradraw-1.1.2.jar` from the
 [latest release](https://github.com/ejupi-djenis30/IntegraDraw/releases/latest), then run:
 
 ```bash
-java -jar integradraw-<version>.jar
+java -jar integradraw-1.1.2.jar
 ```
 
 Download `SHA256SUMS` from the same release to check the file digest. You can also verify the
 GitHub build attestation before opening it:
 
 ```bash
-gh attestation verify integradraw-<version>.jar --repo ejupi-djenis30/IntegraDraw
+gh attestation verify integradraw-1.1.2.jar --repo ejupi-djenis30/IntegraDraw
 ```
 
 The release also includes a self-contained web ZIP and CycloneDX SBOMs for both implementations.
@@ -77,7 +77,7 @@ Requirements: JDK 17 and Maven 3.9.16. The included Maven wrapper supplies the e
 
 ```bash
 ./mvnw clean verify
-java -jar target/integradraw-1.1.1.jar
+java -jar target/integradraw-1.1.2.jar
 ```
 
 The packaged JAR includes the Symja dependencies and has a valid entry point. The Swing UI is created in Java code, so it runs from Maven, an IDE or the JAR without IntelliJ’s `.form` compiler.
