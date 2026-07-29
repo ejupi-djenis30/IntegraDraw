@@ -55,7 +55,8 @@ async function readRequiredText(fileUrl, label) {
 }
 
 export async function validateDiscoveryDocuments(documentRoot, now = new Date()) {
-  const [robots, sitemap, security] = await Promise.all([
+  const [noJekyll, robots, sitemap, security] = await Promise.all([
+    readRequiredFile(new URL(".nojekyll", documentRoot), ".nojekyll"),
     readRequiredText(new URL("robots.txt", documentRoot), "robots.txt"),
     readRequiredText(new URL("sitemap.xml", documentRoot), "sitemap.xml"),
     readRequiredText(
@@ -65,6 +66,10 @@ export async function validateDiscoveryDocuments(documentRoot, now = new Date())
   ]);
   const siteUrl = "https://ejupi-djenis30.github.io/IntegraDraw/";
 
+  assert.ok(
+    noJekyll.byteLength <= 128,
+    ".nojekyll must remain a marker file so GitHub Pages serves .well-known.",
+  );
   assert.equal(
     robots,
     [

@@ -526,6 +526,7 @@ export async function validateExecutableJar(file, version) {
 export async function validateStaticWebArchive(file, releaseDate) {
   const entries = await readZipEntries(file, "Static web archive");
   for (const required of [
+    ".nojekyll",
     ".well-known/security.txt",
     "index.html",
     "LICENSE",

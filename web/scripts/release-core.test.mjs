@@ -146,6 +146,7 @@ async function createWebArchive(root) {
     '<script type="module" src="/IntegraDraw/assets/app.js"></script><link rel="stylesheet" href="/IntegraDraw/assets/app.css">',
   );
   for (const file of [
+    ".nojekyll",
     ".well-known/security.txt",
     "LICENSE",
     "brand-mark.svg",
