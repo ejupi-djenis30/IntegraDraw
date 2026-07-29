@@ -526,10 +526,13 @@ export async function validateExecutableJar(file, version) {
 export async function validateStaticWebArchive(file, releaseDate) {
   const entries = await readZipEntries(file, "Static web archive");
   for (const required of [
+    ".well-known/security.txt",
     "index.html",
     "LICENSE",
     "brand-mark.svg",
     "favicon.svg",
+    "robots.txt",
+    "sitemap.xml",
     "social-preview.png",
   ]) {
     assert.ok(entries.has(required), `Static web archive is missing ${required}.`);
@@ -1100,6 +1103,7 @@ export async function buildReleaseCandidate({
   runProcess(npm.command, [...npm.prefix, "ci"], { cwd: webRoot, env: buildEnvironment });
   runProcess(npm.command, [...npm.prefix, "run", "check"], { cwd: webRoot, env: buildEnvironment });
   runProcess(npm.command, [...npm.prefix, "run", "build"], { cwd: webRoot, env: buildEnvironment });
+  runProcess(npm.command, [...npm.prefix, "run", "validate:dist"], { cwd: webRoot, env: buildEnvironment });
   await copyFile(resolve(root, "LICENSE"), resolve(webRoot, "dist/LICENSE"));
   const npmSbom = runProcess(npm.command, [...npm.prefix, "sbom", "--sbom-format", "cyclonedx"], {
     cwd: webRoot,

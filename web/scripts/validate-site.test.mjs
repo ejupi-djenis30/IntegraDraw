@@ -5,6 +5,7 @@ import { join, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
   readRequiredFile,
+  validateDiscoveryDocuments,
   validateFailOpenRevealStyles,
   validateMobileHeaderLinkTarget,
 } from "./validate-site.mjs";
@@ -15,6 +16,40 @@ async function createTemporaryRoot() {
   const directory = await mkdtemp(join(tmpdir(), "integradraw-validator-"));
   temporaryDirectories.push(directory);
   return pathToFileURL(`${directory}${sep}`);
+}
+
+async function writeDiscoveryDocuments(root, overrides = {}) {
+  const documents = {
+    "robots.txt": [
+      "User-agent: *",
+      "Allow: /IntegraDraw/",
+      "Sitemap: https://ejupi-djenis30.github.io/IntegraDraw/sitemap.xml",
+      "",
+    ].join("\n"),
+    "sitemap.xml": [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+      "  <url>",
+      "    <loc>https://ejupi-djenis30.github.io/IntegraDraw/</loc>",
+      "  </url>",
+      "</urlset>",
+      "",
+    ].join("\n"),
+    ".well-known/security.txt": [
+      "Contact: https://github.com/ejupi-djenis30/IntegraDraw/security/advisories/new",
+      "Expires: 2030-07-31T23:59:59Z",
+      "Preferred-Languages: en",
+      "Canonical: https://ejupi-djenis30.github.io/IntegraDraw/.well-known/security.txt",
+      "Policy: https://github.com/ejupi-djenis30/IntegraDraw/security/policy",
+      "",
+    ].join("\n"),
+    ...overrides,
+  };
+
+  await mkdir(new URL(".well-known/", root), { recursive: true });
+  await Promise.all(
+    Object.entries(documents).map(([file, contents]) => writeFile(new URL(file, root), contents)),
+  );
 }
 
 afterEach(async () => {
@@ -48,6 +83,70 @@ describe("site validator file reads", () => {
     await mkdir(directoryUrl);
 
     await expect(readRequiredFile(directoryUrl, "not-a-file")).rejects.toMatchObject({ code: "EISDIR" });
+  });
+});
+
+describe("project Pages discovery contract", () => {
+  it("accepts canonical project-scoped discovery documents", async () => {
+    const root = await createTemporaryRoot();
+    await writeDiscoveryDocuments(root);
+
+    await expect(
+      validateDiscoveryDocuments(root, new Date("2026-07-29T00:00:00Z")),
+    ).resolves.toBeUndefined();
+  });
+
+  it("rejects a wrong base path and an email security contact", async () => {
+    const wrongPathRoot = await createTemporaryRoot();
+    await writeDiscoveryDocuments(wrongPathRoot, {
+      "robots.txt": [
+        "User-agent: *",
+        "Allow: /",
+        "Sitemap: https://ejupi-djenis30.github.io/sitemap.xml",
+        "",
+      ].join("\n"),
+    });
+    await expect(validateDiscoveryDocuments(wrongPathRoot)).rejects.toThrow(/project Pages scope/);
+
+    const emailRoot = await createTemporaryRoot();
+    await writeDiscoveryDocuments(emailRoot, {
+      ".well-known/security.txt": [
+        "Contact: mailto:person@example.test",
+        "Expires: 2030-07-31T23:59:59Z",
+        "Preferred-Languages: en",
+        "Canonical: https://ejupi-djenis30.github.io/IntegraDraw/.well-known/security.txt",
+        "Policy: https://github.com/ejupi-djenis30/IntegraDraw/security/policy",
+        "",
+      ].join("\n"),
+    });
+    await expect(validateDiscoveryDocuments(emailRoot)).rejects.toThrow(
+      /private vulnerability reporting/,
+    );
+  });
+
+  it("rejects missing and expired security metadata", async () => {
+    const missingRoot = await createTemporaryRoot();
+    await writeDiscoveryDocuments(missingRoot);
+    await rm(new URL(".well-known/security.txt", missingRoot));
+    await expect(validateDiscoveryDocuments(missingRoot)).rejects.toMatchObject({
+      code: "ENOENT",
+      message: "Required site file is missing: .well-known/security.txt",
+    });
+
+    const expiredRoot = await createTemporaryRoot();
+    await writeDiscoveryDocuments(expiredRoot, {
+      ".well-known/security.txt": [
+        "Contact: https://github.com/ejupi-djenis30/IntegraDraw/security/advisories/new",
+        "Expires: 2025-07-31T23:59:59Z",
+        "Preferred-Languages: en",
+        "Canonical: https://ejupi-djenis30.github.io/IntegraDraw/.well-known/security.txt",
+        "Policy: https://github.com/ejupi-djenis30/IntegraDraw/security/policy",
+        "",
+      ].join("\n"),
+    });
+    await expect(
+      validateDiscoveryDocuments(expiredRoot, new Date("2026-07-29T00:00:00Z")),
+    ).rejects.toThrow(/future expiration/);
   });
 });
 

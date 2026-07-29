@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /IntegraDraw/
+Sitemap: https://ejupi-djenis30.github.io/IntegraDraw/sitemap.xml

@@ -65,4 +65,6 @@ jobs:
       - name: Typecheck and test
         run: npm run check
       - name: Build Page
-        run: npm run build
+        run: |
+          npm run build
+          npm run validate:dist
