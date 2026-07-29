@@ -20,6 +20,7 @@ async function createTemporaryRoot() {
 
 async function writeDiscoveryDocuments(root, overrides = {}) {
   const documents = {
+    ".nojekyll": "",
     "robots.txt": [
       "User-agent: *",
       "Allow: /IntegraDraw/",
@@ -124,7 +125,15 @@ describe("project Pages discovery contract", () => {
     );
   });
 
-  it("rejects missing and expired security metadata", async () => {
+  it("rejects a missing Pages marker, missing security metadata and expired security metadata", async () => {
+    const missingMarkerRoot = await createTemporaryRoot();
+    await writeDiscoveryDocuments(missingMarkerRoot);
+    await rm(new URL(".nojekyll", missingMarkerRoot));
+    await expect(validateDiscoveryDocuments(missingMarkerRoot)).rejects.toMatchObject({
+      code: "ENOENT",
+      message: "Required site file is missing: .nojekyll",
+    });
+
     const missingRoot = await createTemporaryRoot();
     await writeDiscoveryDocuments(missingRoot);
     await rm(new URL(".well-known/security.txt", missingRoot));
