@@ -54,6 +54,69 @@ async function readRequiredText(fileUrl, label) {
   return (await readRequiredFile(fileUrl, label)).toString("utf8");
 }
 
+export async function validateDiscoveryDocuments(documentRoot, now = new Date()) {
+  const [robots, sitemap, security] = await Promise.all([
+    readRequiredText(new URL("robots.txt", documentRoot), "robots.txt"),
+    readRequiredText(new URL("sitemap.xml", documentRoot), "sitemap.xml"),
+    readRequiredText(
+      new URL(".well-known/security.txt", documentRoot),
+      ".well-known/security.txt",
+    ),
+  ]);
+  const siteUrl = "https://ejupi-djenis30.github.io/IntegraDraw/";
+
+  assert.equal(
+    robots,
+    [
+      "User-agent: *",
+      "Allow: /IntegraDraw/",
+      `Sitemap: ${siteUrl}sitemap.xml`,
+      "",
+    ].join("\n"),
+    "robots.txt must retain IntegraDraw's project Pages scope and canonical sitemap URL.",
+  );
+  assert.equal(
+    sitemap,
+    [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+      "  <url>",
+      `    <loc>${siteUrl}</loc>`,
+      "  </url>",
+      "</urlset>",
+      "",
+    ].join("\n"),
+    "sitemap.xml must expose exactly IntegraDraw's canonical project Pages URL.",
+  );
+
+  const securityLines = security.split(/\r?\n/u);
+  assert.doesNotMatch(
+    security,
+    /^Contact:\s*mailto:/imu,
+    "security.txt must direct reports to GitHub private vulnerability reporting, not email.",
+  );
+  assert.doesNotMatch(
+    security,
+    /@[A-Za-z0-9.-]+/u,
+    "security.txt must direct reports to GitHub private vulnerability reporting, not email.",
+  );
+  for (const line of [
+    "Contact: https://github.com/ejupi-djenis30/IntegraDraw/security/advisories/new",
+    "Preferred-Languages: en",
+    `Canonical: ${siteUrl}.well-known/security.txt`,
+    "Policy: https://github.com/ejupi-djenis30/IntegraDraw/security/policy",
+  ]) {
+    assert.ok(securityLines.includes(line), `security.txt is missing ${line}`);
+  }
+  const expiration = security.match(/^Expires:\s*(\S+)$/imu)?.[1];
+  assert.ok(expiration, "security.txt must declare an expiration.");
+  assert.ok(!Number.isNaN(Date.parse(expiration)), "security.txt expiration must be a valid timestamp.");
+  assert.ok(
+    Date.parse(expiration) > now.valueOf(),
+    "security.txt must carry a future expiration.",
+  );
+}
+
 export async function validateSite(siteRoot = root) {
   const html = await readRequiredText(new URL("index.html", siteRoot), "index.html");
   const config = await readRequiredText(new URL("vite.config.ts", siteRoot), "vite.config.ts");
@@ -62,6 +125,7 @@ export async function validateSite(siteRoot = root) {
   for (const file of ["public/brand-mark.svg", "public/favicon.svg"]) {
     await readRequiredFile(new URL(file, siteRoot), file);
   }
+  await validateDiscoveryDocuments(new URL("public/", siteRoot));
 
   for (const token of [
     '<html lang="en">',
