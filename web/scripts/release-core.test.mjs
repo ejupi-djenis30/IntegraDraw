@@ -489,6 +489,7 @@ describe("release workflow contract", () => {
     expect(workflow).toMatch(/^permissions: \{\}$/mu);
     expect(build).toMatch(/^    permissions:\n      contents: read$/mu);
     expect(build).not.toMatch(/^      (?:pages|id-token):/mu);
+    expect(build).toContain("include-hidden-files: true");
     expect(deploy).toMatch(/^    permissions:\n      pages: write\n      id-token: write$/mu);
     expect(deploy).not.toMatch(/^      contents:/mu);
   });
