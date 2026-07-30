@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
   <title id="title">IntegraDraw mark</title>
-  <desc id="desc">The letters I and D built from an integral curve and a rectangular frame.</desc>
-  <rect width="64" height="64" rx="2" fill="#f4f1ea"/>
-  <path d="M22 13h10c-4 0-6 3-6 8v22c0 6-2 9-7 9h-5" fill="none" stroke="#0e1111" stroke-width="6" stroke-linecap="square"/>
-  <path d="M35 16h6c8 0 13 6 13 16s-5 16-13 16h-6z" fill="none" stroke="#b44a2a" stroke-width="5"/>
+  <desc id="desc">An integral curve framed by its upper and lower bounds.</desc>
+  <rect width="64" height="64" rx="3" fill="#f4f1ea"/>
+  <path class="integral-stroke" d="M47 11h-4c-8 0-12 4-13 13l-2 16c-1 9-5 13-13 13h-4" fill="none" stroke="#0e1111" stroke-width="6" stroke-linecap="round"/>
+  <path class="bound-marks" d="M45 15h6v6h-6zM7 43h6v6H7z" fill="#b44a2a"/>
 </svg>

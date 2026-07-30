@@ -64,6 +64,9 @@ a {
   z-index: 100;
   top: 12px;
   left: 12px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 12px 16px;
   color: var(--paper);
   background: var(--ink);
@@ -94,6 +97,7 @@ a {
   display: inline-flex;
   gap: 12px;
   align-items: center;
+  min-height: 44px;
   width: fit-content;
   font-size: 0.92rem;
   font-weight: 760;
@@ -114,6 +118,9 @@ a {
 .site-header nav a,
 .header-link {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   color: rgb(251 248 241 / 72%);
   font-size: 0.78rem;
   font-weight: 650;
@@ -811,6 +818,9 @@ footer p {
 }
 
 footer > a:last-child {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   justify-self: end;
   font-size: 0.8rem;
   font-weight: 700;
@@ -906,8 +916,18 @@ footer > a:last-child {
     border-bottom: 1px solid var(--ink);
   }
 
+  .preset {
+    min-height: 44px;
+    padding-inline: 12px;
+  }
+
   .visualizer {
     padding: 12px;
+  }
+
+  .zoom-controls button {
+    min-width: 44px;
+    height: 44px;
   }
 
   .results {
@@ -1037,7 +1057,12 @@ footer > a:last-child {
   }
 
   .plot-toolbar {
+    flex-direction: column;
     align-items: flex-start;
+  }
+
+  .zoom-controls {
+    align-self: flex-start;
   }
 
   .plot-legend {

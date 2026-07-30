@@ -7,8 +7,11 @@ import {
   readRequiredFile,
   validateDiscoveryDocuments,
   validateFailOpenRevealStyles,
+  validateIntegralBrand,
   validateMobileHeaderLinkTarget,
   validateReleaseCta,
+  validateSocialArtwork,
+  validateTouchTargetStyles,
 } from "./validate-site.mjs";
 
 const temporaryDirectories = [];
@@ -188,6 +191,125 @@ describe("mobile header accessibility", () => {
     `;
 
     expect(() => validateMobileHeaderLinkTarget(styles)).toThrow(/at least 44px tall/);
+  });
+});
+
+describe("IntegraDraw identity", () => {
+  const html = `
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <img src="./brand-mark.svg" alt="" />
+    <img src="./brand-mark.svg" alt="" />
+  `;
+  const brandMark = `
+    <svg>
+      <desc>An integral curve framed by its upper and lower bounds.</desc>
+      <path class="integral-stroke" d="integral-geometry"/>
+      <path class="bound-marks" d="bound-geometry"/>
+    </svg>
+  `;
+  const favicon = brandMark;
+
+  it("accepts one integral geometry across the public marks", () => {
+    expect(() => validateIntegralBrand(html, brandMark, favicon)).not.toThrow();
+  });
+
+  it("rejects the retired letter monogram", () => {
+    const retiredMark = brandMark.replace(
+      "</desc>",
+      " The letters I and D form the mark.</desc>",
+    );
+
+    expect(() => validateIntegralBrand(html, retiredMark, favicon)).toThrow(/retired letter monogram/);
+  });
+
+  it("rejects mismatched favicon geometry", () => {
+    const mismatchedFavicon = favicon.replace("integral-geometry", "different-geometry");
+
+    expect(() => validateIntegralBrand(html, brandMark, mismatchedFavicon)).toThrow(/same integral geometry/);
+  });
+
+  it("keeps the social card on the same integral geometry", () => {
+    const socialArtwork = `
+      <svg width="1200" height="675" viewBox="0 0 1200 675">
+        <text>INTEGRADRAW</text>
+        <path class="integral-stroke" d="integral-geometry"/>
+        <path class="bound-marks" d="bound-geometry"/>
+      </svg>
+    `;
+
+    expect(() => validateSocialArtwork(socialArtwork, brandMark)).not.toThrow();
+  });
+
+  it("rejects a letter monogram in the social card", () => {
+    const retiredArtwork = `
+      <svg width="1200" height="675" viewBox="0 0 1200 675">
+        <text>INTEGRADRAW</text>
+        <text>JD</text>
+        <path class="integral-stroke" d="integral-geometry"/>
+        <path class="bound-marks" d="bound-geometry"/>
+      </svg>
+    `;
+
+    expect(() => validateSocialArtwork(retiredArtwork, brandMark)).toThrow(/letter monogram/);
+  });
+});
+
+describe("interactive target sizing", () => {
+  const validStyles = `
+    .skip-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+    }
+
+    .site-header nav a,
+    .header-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+    }
+
+    footer > a:last-child {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+    }
+
+    @media (max-width: 820px) {
+      .preset {
+        min-height: 44px;
+      }
+
+      .zoom-controls button {
+        min-width: 44px;
+        height: 44px;
+      }
+    }
+  `;
+
+  it("accepts 44px navigation and mobile workbench targets", () => {
+    expect(() => validateTouchTargetStyles(validStyles)).not.toThrow();
+  });
+
+  it("rejects undersized mobile presets", () => {
+    const undersized = validStyles.replace(
+      ".preset {\n        min-height: 44px;",
+      ".preset {\n        min-height: 34px;",
+    );
+
+    expect(() => validateTouchTargetStyles(undersized)).toThrow(/preset targets must be at least 44px/);
+  });
+
+  it("rejects narrow mobile graph controls", () => {
+    const undersized = validStyles.replace("min-width: 44px;", "min-width: 32px;");
+
+    expect(() => validateTouchTargetStyles(undersized)).toThrow(/graph controls must be at least 44px wide/);
   });
 });
 
