@@ -35,6 +35,109 @@ export function validateMobileHeaderLinkTarget(styles) {
   assert.match(declarations, /align-items:\s*center\s*;/, "Mobile Source link text must remain vertically centred.");
 }
 
+function readClassPath(svg, className) {
+  return svg.match(new RegExp(`<path\\s+class="${className}"\\s+d="([^"]+)"`))?.[1];
+}
+
+export function validateIntegralBrand(html, brandMark, favicon) {
+  assert.equal(
+    (html.match(/src="\.\/brand-mark\.svg"/gu) ?? []).length,
+    2,
+    "Header and footer must use the same IntegraDraw mark.",
+  );
+  assert.match(
+    html,
+    /<link rel="icon" href="\.\/favicon\.svg" type="image\/svg\+xml" \/>/,
+    "The document must use the matching vector favicon.",
+  );
+
+  for (const [label, svg] of [
+    ["brand mark", brandMark],
+    ["favicon", favicon],
+  ]) {
+    assert.match(svg, /An integral curve framed by its upper and lower bounds\./, `${label} must describe the integral identity.`);
+    assert.doesNotMatch(svg, /letters?\s+I\s+and\s+D/iu, `${label} must not restore the retired letter monogram.`);
+    assert.ok(readClassPath(svg, "integral-stroke"), `${label} must contain the integral stroke.`);
+    assert.ok(readClassPath(svg, "bound-marks"), `${label} must contain the two bound marks.`);
+  }
+
+  assert.equal(
+    readClassPath(brandMark, "integral-stroke"),
+    readClassPath(favicon, "integral-stroke"),
+    "Brand mark and favicon must share the same integral geometry.",
+  );
+  assert.equal(
+    readClassPath(brandMark, "bound-marks"),
+    readClassPath(favicon, "bound-marks"),
+    "Brand mark and favicon must share the same bound geometry.",
+  );
+}
+
+export function validateSocialArtwork(socialArtwork, brandMark) {
+  assert.match(
+    socialArtwork,
+    /<svg[^>]*\bwidth="1200"[^>]*\bheight="675"[^>]*\bviewBox="0 0 1200 675"/u,
+    "Social artwork must retain the 1200×675 sharing canvas.",
+  );
+  assert.match(socialArtwork, />INTEGRADRAW</u, "Social artwork must carry the product name.");
+  assert.doesNotMatch(
+    socialArtwork,
+    />\s*(?:JD|ID)\s*</u,
+    "Social artwork must not restore a letter monogram.",
+  );
+  assert.equal(
+    readClassPath(socialArtwork, "integral-stroke"),
+    readClassPath(brandMark, "integral-stroke"),
+    "Social artwork must reuse the public integral geometry.",
+  );
+  assert.equal(
+    readClassPath(socialArtwork, "bound-marks"),
+    readClassPath(brandMark, "bound-marks"),
+    "Social artwork must reuse the public bound geometry.",
+  );
+}
+
+function readRule(styles, selector, label) {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const match = styles.match(new RegExp(`${escapedSelector}\\s*\\{([^}]*)\\}`));
+  assert.ok(match, `CSS must define ${label}.`);
+  return match[1];
+}
+
+export function validateTouchTargetStyles(styles) {
+  for (const [selector, label] of [
+    [".skip-link", "the skip-link target"],
+    [".brand", "the shared brand-link target"],
+    ["footer > a:last-child", "the footer repository target"],
+  ]) {
+    const declarations = readRule(styles, selector, label);
+    assert.match(declarations, /display:\s*inline-flex\s*;/, `${label} must expose a box target.`);
+    assert.match(declarations, /align-items:\s*center\s*;/, `${label} must remain vertically centred.`);
+    assert.match(declarations, /min-height:\s*44px\s*;/, `${label} must be at least 44px tall.`);
+  }
+
+  const headerLinks = styles.match(
+    /\.site-header nav a,\s*\.header-link\s*\{([^}]*)\}/,
+  );
+  assert.ok(headerLinks, "CSS must define the shared header-link target.");
+  assert.match(headerLinks[1], /display:\s*inline-flex\s*;/, "Header links must expose box targets.");
+  assert.match(headerLinks[1], /align-items:\s*center\s*;/, "Header links must remain vertically centred.");
+  assert.match(headerLinks[1], /min-height:\s*44px\s*;/, "Header links must be at least 44px tall.");
+
+  const mobilePreset = styles.match(
+    /@media\s*\(max-width:\s*820px\)\s*\{[\s\S]*?\.preset\s*\{([^}]*)\}/,
+  );
+  assert.ok(mobilePreset, "CSS must define mobile preset targets at 820px.");
+  assert.match(mobilePreset[1], /min-height:\s*44px\s*;/, "Mobile preset targets must be at least 44px tall.");
+
+  const mobileZoom = styles.match(
+    /@media\s*\(max-width:\s*820px\)\s*\{[\s\S]*?\.zoom-controls button\s*\{([^}]*)\}/,
+  );
+  assert.ok(mobileZoom, "CSS must define mobile graph controls at 820px.");
+  assert.match(mobileZoom[1], /min-width:\s*44px\s*;/, "Mobile graph controls must be at least 44px wide.");
+  assert.match(mobileZoom[1], /height:\s*44px\s*;/, "Mobile graph controls must be at least 44px tall.");
+}
+
 export function validateFailOpenRevealStyles(styles) {
   const defaultReveal = styles.match(/^\s*\.reveal\s*\{([^}]*)\}/m);
   assert.ok(defaultReveal, "CSS must define a default .reveal rule.");
@@ -159,10 +262,10 @@ export async function validateSite(siteRoot = root) {
   const html = await readRequiredText(new URL("index.html", siteRoot), "index.html");
   const config = await readRequiredText(new URL("vite.config.ts", siteRoot), "vite.config.ts");
   const styles = await readRequiredText(new URL("src/styles.css", siteRoot), "src/styles.css");
+  const brandMark = await readRequiredText(new URL("public/brand-mark.svg", siteRoot), "public/brand-mark.svg");
+  const favicon = await readRequiredText(new URL("public/favicon.svg", siteRoot), "public/favicon.svg");
+  const socialArtwork = await readRequiredText(new URL("artwork/social-preview.svg", siteRoot), "artwork/social-preview.svg");
 
-  for (const file of ["public/brand-mark.svg", "public/favicon.svg"]) {
-    await readRequiredFile(new URL(file, siteRoot), file);
-  }
   await validateDiscoveryDocuments(new URL("public/", siteRoot));
 
   for (const token of [
@@ -184,7 +287,10 @@ export async function validateSite(siteRoot = root) {
   }
 
   assert.ok(config.includes('base: "/IntegraDraw/"'), "Vite must retain the project Pages base path.");
+  validateIntegralBrand(html, brandMark, favicon);
+  validateSocialArtwork(socialArtwork, brandMark);
   validateMobileHeaderLinkTarget(styles);
+  validateTouchTargetStyles(styles);
   validateFailOpenRevealStyles(styles);
   validateReleaseCta(html, styles);
 
@@ -198,6 +304,8 @@ export async function validateSite(siteRoot = root) {
     "PNG",
     "The social preview is not a PNG file.",
   );
+  assert.equal(socialPreview.readUInt32BE(16), 1200, "The social preview must remain 1200px wide.");
+  assert.equal(socialPreview.readUInt32BE(20), 675, "The social preview must remain 675px tall.");
 
 }
 
