@@ -50,6 +50,44 @@ export function validateFailOpenRevealStyles(styles) {
   assert.match(visibleReveal[1], /opacity:\s*1\s*;/, "Observed reveal content must become visible.");
 }
 
+export function validateReleaseCta(html, styles) {
+  const latestReleaseUrl = "https://github.com/ejupi-djenis30/IntegraDraw/releases/latest";
+  const releaseLink = html.match(
+    /<a\s+class="text-link release-link"\s+href="([^"]+)"\s+aria-label="([^"]+)"\s*>[\s\S]*?<\/a>/,
+  );
+  assert.ok(releaseLink, "The hero must expose a dedicated latest desktop release link.");
+  assert.equal(
+    releaseLink[1],
+    latestReleaseUrl,
+    "The desktop CTA must point to GitHub's stable latest-release route.",
+  );
+  assert.equal(
+    releaseLink[2],
+    "Open the latest IntegraDraw desktop release on GitHub",
+    "The release CTA must describe its external destination.",
+  );
+  assert.match(
+    releaseLink[0],
+    /Get the desktop release/,
+    "The release CTA must use a direct, honest visible label.",
+  );
+
+  const releaseStyles = styles.match(/\.release-link\s*\{([^}]*)\}/);
+  assert.ok(releaseStyles, "CSS must define the release CTA target.");
+  assert.match(releaseStyles[1], /display:\s*inline-flex\s*;/, "The release CTA must expose a box target.");
+  assert.match(releaseStyles[1], /min-height:\s*44px\s*;/, "The release CTA target must be at least 44px tall.");
+
+  const mobileHeroLinks = styles.match(
+    /@media\s*\(max-width:\s*560px\)\s*\{[\s\S]*?\.button,\s*\.text-link\s*\{([^}]*)\}/,
+  );
+  assert.ok(mobileHeroLinks, "Mobile CSS must define full-width hero actions at 560px.");
+  assert.match(
+    mobileHeroLinks[1],
+    /width:\s*100%\s*;/,
+    "The release CTA must remain full-width on narrow screens.",
+  );
+}
+
 async function readRequiredText(fileUrl, label) {
   return (await readRequiredFile(fileUrl, label)).toString("utf8");
 }
@@ -153,6 +191,7 @@ export async function validateSite(siteRoot = root) {
   assert.ok(config.includes('base: "/IntegraDraw/"'), "Vite must retain the project Pages base path.");
   validateMobileHeaderLinkTarget(styles);
   validateFailOpenRevealStyles(styles);
+  validateReleaseCta(html, styles);
 
   const socialPreview = await readRequiredFile(
     new URL("public/social-preview.png", siteRoot),

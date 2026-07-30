@@ -8,6 +8,7 @@ import {
   validateDiscoveryDocuments,
   validateFailOpenRevealStyles,
   validateMobileHeaderLinkTarget,
+  validateReleaseCta,
 } from "./validate-site.mjs";
 
 const temporaryDirectories = [];
@@ -222,5 +223,51 @@ describe("fail-open reveal styles", () => {
     const unscoped = enhancedStyles.replace(":where(.reveal-enabled) .reveal {", ".reveal {");
 
     expect(() => validateFailOpenRevealStyles(unscoped)).toThrow(/progressive enhancement/);
+  });
+});
+
+describe("latest desktop release CTA", () => {
+  const validHtml = `
+    <div class="hero-actions">
+      <a
+        class="text-link release-link"
+        href="https://github.com/ejupi-djenis30/IntegraDraw/releases/latest"
+        aria-label="Open the latest IntegraDraw desktop release on GitHub"
+      >
+        Get the desktop release <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+  `;
+  const validStyles = `
+    .release-link {
+      display: inline-flex;
+      min-height: 44px;
+    }
+
+    @media (max-width: 560px) {
+      .button,
+      .text-link {
+        width: 100%;
+      }
+    }
+  `;
+
+  it("accepts a direct latest-release link with a responsive touch target", () => {
+    expect(() => validateReleaseCta(validHtml, validStyles)).not.toThrow();
+  });
+
+  it("rejects a generic repository link", () => {
+    const repositoryLink = validHtml.replace(
+      "/releases/latest",
+      "",
+    );
+
+    expect(() => validateReleaseCta(repositoryLink, validStyles)).toThrow(/stable latest-release route/);
+  });
+
+  it("rejects an undersized release target", () => {
+    const undersized = validStyles.replace("min-height: 44px;", "min-height: 32px;");
+
+    expect(() => validateReleaseCta(validHtml, undersized)).toThrow(/at least 44px tall/);
   });
 });
