@@ -4,7 +4,7 @@ Notable changes to IntegraDraw are recorded here.
 
 ## Unreleased
 
-- No unreleased changes.
+- Added a direct, responsive path from the web workbench to the latest desktop release.
 
 ## 1.1.2 — 2026-07-23
 
