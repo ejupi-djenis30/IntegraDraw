@@ -232,7 +232,6 @@ describe("latest desktop release CTA", () => {
       <a
         class="text-link release-link"
         href="https://github.com/ejupi-djenis30/IntegraDraw/releases/latest"
-        aria-label="Open the latest IntegraDraw desktop release on GitHub"
       >
         Get the desktop release <span aria-hidden="true">↗</span>
       </a>

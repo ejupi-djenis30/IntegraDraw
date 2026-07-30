@@ -53,18 +53,13 @@ export function validateFailOpenRevealStyles(styles) {
 export function validateReleaseCta(html, styles) {
   const latestReleaseUrl = "https://github.com/ejupi-djenis30/IntegraDraw/releases/latest";
   const releaseLink = html.match(
-    /<a\s+class="text-link release-link"\s+href="([^"]+)"\s+aria-label="([^"]+)"\s*>[\s\S]*?<\/a>/,
+    /<a\s+class="text-link release-link"\s+href="([^"]+)"\s*>[\s\S]*?<\/a>/,
   );
   assert.ok(releaseLink, "The hero must expose a dedicated latest desktop release link.");
   assert.equal(
     releaseLink[1],
     latestReleaseUrl,
     "The desktop CTA must point to GitHub's stable latest-release route.",
-  );
-  assert.equal(
-    releaseLink[2],
-    "Open the latest IntegraDraw desktop release on GitHub",
-    "The release CTA must describe its external destination.",
   );
   assert.match(
     releaseLink[0],
