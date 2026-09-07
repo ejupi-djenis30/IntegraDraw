@@ -95,30 +95,48 @@ public final class MathFunction {
     }
 
     public double midpointIntegral(double lower, double higher, int segments) {
-        return getRectangles(lower, higher, segments).stream()
+        return finiteResult(getRectangles(lower, higher, segments).stream()
                 .mapToDouble(Rectangle::getArea)
-                .sum();
+                .sum());
     }
 
     public double trapezoidalIntegral(double lower, double higher, int segments) {
         validateApproximation(lower, higher, segments);
         double width = (higher - lower) / segments;
-        double sum = 0.5 * (valueAt(lower) + valueAt(higher));
+        double sum = valueAt(lower) * (width / 2.0) + valueAt(higher) * (width / 2.0);
         for (int index = 1; index < segments; index++) {
-            sum += valueAt(lower + index * width);
+            sum += valueAt(lower + index * width) * width;
         }
-        return sum * width;
+        return finiteResult(sum);
     }
 
     public double referenceIntegral(double lower, double higher) {
         validateInterval(lower, higher);
         int slices = REFERENCE_SEGMENTS;
         double width = (higher - lower) / slices;
-        double sum = valueAt(lower) + valueAt(higher);
-        for (int index = 1; index < slices; index++) {
-            sum += (index % 2 == 0 ? 2.0 : 4.0) * valueAt(lower + index * width);
+        if (width <= 0) {
+            throw new NumericalException(
+                    NumericalException.Category.BOUNDS,
+                    "The interval cannot be represented at this numerical resolution."
+            );
         }
-        return sum * width / 3.0;
+        // Weight each sample before summation to avoid overflowing an unscaled
+        // intermediate when the final integral is representable.
+        double sum = valueAt(lower) * (width / 3.0) + valueAt(higher) * (width / 3.0);
+        for (int index = 1; index < slices; index++) {
+            sum += valueAt(lower + index * width) * (width * (index % 2 == 0 ? 2.0 / 3.0 : 4.0 / 3.0));
+        }
+        return finiteResult(sum);
+    }
+
+    static double finiteResult(double value) {
+        if (!Double.isFinite(value)) {
+            throw new NumericalException(
+                    NumericalException.Category.EVALUATION,
+                    "The integral exceeds the finite numerical range. Try a smaller interval or function scale."
+            );
+        }
+        return value;
     }
 
     /** @deprecated Use {@link #referenceIntegral(double, double)} with lower then higher bounds. */

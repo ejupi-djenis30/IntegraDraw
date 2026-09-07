@@ -108,6 +108,11 @@ The midpoint and trapezoidal values are numerical approximations. The browser’
 
 Functions with discontinuities or non-finite values may be rejected. IntegraDraw is an exploratory teaching tool, not a computer algebra proof system.
 
+Both implementations scale quadrature contributions before summing to preserve large finite
+results. If an integral or its error estimate still overflows, calculation stops with an
+evaluation error instead of displaying `Infinity` or `NaN`. Intervals whose reference step
+underflows are rejected, and direct browser reference calls are capped at 100,000 subintervals.
+
 ## Automated checks
 
 Pull requests and pushes run:

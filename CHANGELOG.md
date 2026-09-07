@@ -5,6 +5,11 @@ Notable changes to IntegraDraw are recorded here.
 ## Unreleased
 
 - Added a direct, responsive path from the web workbench to the latest desktop release.
+- Keep large representable quadrature results finite and report integral or error-estimate overflow explicitly in Java and TypeScript.
+- Reject reference-step underflow, cap direct browser Simpson calls, and reject inherited object properties as expression names.
+- Update the locked PostCSS build dependency to 8.5.25 to address its source-map file-reading advisory.
+- Patch the locked nanoid build dependency to 3.3.18 to resolve its security advisory.
+- Align Log4j API and Core through the 2.26.1 BOM so Symja cannot select the vulnerable 2.25.4 API.
 
 ## 1.1.2 — 2026-07-23
 
