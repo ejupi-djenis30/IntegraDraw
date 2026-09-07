@@ -97,4 +97,34 @@ class MathFunctionTest {
 
         assertEquals(List.of(0.0), function.getValuesGivenInterval(0, Double.MIN_VALUE, Double.MAX_VALUE));
     }
+
+    @Test
+    void keepsLargeRepresentableIntegralsFinite() {
+        MathFunction function = new MathFunction("10^308", "x");
+
+        assertEquals(1.0, function.midpointIntegral(0, 0.5, 12) / 5e307, 1e-10);
+        assertEquals(1.0, function.trapezoidalIntegral(0, 0.5, 12) / 5e307, 1e-10);
+        assertEquals(1.0, function.referenceIntegral(0, 0.5) / 5e307, 1e-10);
+    }
+
+    @Test
+    void rejectsIntegralOverflowWithAnEvaluationCategory() {
+        MathFunction function = new MathFunction("10^308", "x");
+
+        NumericalException midpoint = assertThrows(NumericalException.class, () -> function.midpointIntegral(0, 2, 12));
+        NumericalException trapezoidal = assertThrows(NumericalException.class, () -> function.trapezoidalIntegral(0, 2, 12));
+        NumericalException reference = assertThrows(NumericalException.class, () -> function.referenceIntegral(0, 2));
+        assertEquals(NumericalException.Category.EVALUATION, midpoint.category());
+        assertEquals(NumericalException.Category.EVALUATION, trapezoidal.category());
+        assertEquals(NumericalException.Category.EVALUATION, reference.category());
+    }
+
+    @Test
+    void rejectsReferenceStepWidthUnderflow() {
+        MathFunction function = new MathFunction("1", "x");
+
+        NumericalException failure = assertThrows(
+                NumericalException.class, () -> function.referenceIntegral(0, Double.MIN_VALUE));
+        assertEquals(NumericalException.Category.BOUNDS, failure.category());
+    }
 }

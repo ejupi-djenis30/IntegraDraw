@@ -15,8 +15,8 @@ public record IntegralAnalysis(
                 midpoint,
                 trapezoidal,
                 reference,
-                Math.abs(midpoint - reference),
-                Math.abs(trapezoidal - reference)
+                MathFunction.finiteResult(Math.abs(midpoint - reference)),
+                MathFunction.finiteResult(Math.abs(trapezoidal - reference))
         );
     }
 }

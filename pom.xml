@@ -31,6 +31,14 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Align Symja's transitive Log4j API with the patched runtime implementation. -->
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${log4j.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>

@@ -210,10 +210,10 @@ class Parser {
     }
     if (token.type === "identifier") {
       if (token.value === "x") return (x) => x;
-      const constant = CONSTANTS[token.value];
+      const constant = Object.hasOwn(CONSTANTS, token.value) ? CONSTANTS[token.value] : undefined;
       if (constant !== undefined) return () => constant;
 
-      const fn = FUNCTIONS[token.value];
+      const fn = Object.hasOwn(FUNCTIONS, token.value) ? FUNCTIONS[token.value] : undefined;
       if (fn === undefined) {
         throw new ExpressionError(`Unknown name “${token.value}”`, token.position);
       }

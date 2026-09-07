@@ -26,4 +26,11 @@ describe("compileExpression", () => {
   it("rejects non-finite evaluations", () => {
     expect(() => compileExpression("1 / x").evaluate(0)).toThrow(/not finite/);
   });
+
+  it("rejects inherited object properties as unknown identifiers", () => {
+    for (const source of ["constructor", "constructor(x)", "toString", "valueOf"]) {
+      expect(() => compileExpression(source)).toThrow(ExpressionError);
+      expect(() => compileExpression(source)).toThrow(/Unknown name/);
+    }
+  });
 });
